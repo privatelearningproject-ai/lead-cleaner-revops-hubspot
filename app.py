@@ -61,6 +61,8 @@ def init_session_state() -> None:
         st.session_state.hubspot_portal_id = None
     if "hubspot_token" not in st.session_state:
         st.session_state.hubspot_token = None
+    if "show_marketplace_modal" not in st.session_state:
+        st.session_state.show_marketplace_modal = False
 
 
 def render_sidebar() -> Dict[str, Any]:
@@ -206,6 +208,11 @@ def render_sidebar() -> Dict[str, Any]:
         help="Switch between Classic Tabbed explorer and the new high-density Mixed layout.",
     )
 
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 📚 Marketplace Resources")
+    if st.sidebar.button("📖 App Setup & Sync Guide"):
+        st.session_state.show_marketplace_modal = True
+
     st.sidebar.markdown("### SQLite Audit Trail")
     if st.sidebar.button("Inspect Previous Runs"):
         st.session_state.show_db_modal = True
@@ -244,6 +251,107 @@ def render_audit_modal() -> None:
         if st.button("Close Audit Inspector"):
             st.session_state.show_db_modal = False
             st.rerun()
+
+
+@st.dialog("🏢 HubSpot App Marketplace Integration Guide", width="large")
+def show_marketplace_guide_dialog() -> None:
+    """Render comprehensive marketplace setup guide, shared data matrix, and security specs."""
+    st.markdown(
+        """
+        <div style="margin-bottom:14px;">
+            <span class="badge-pill badge-coral">HubSpot Certified App Standard</span>
+            <span class="badge-pill badge-teal">Non-Destructive RevOps Sync</span>
+            <span class="badge-pill badge-slate">v2.4 Marketplace Edition</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.caption("Modeled after certified integrations like Leadfeeder to provide enterprise data governance, clear sync direction, and an under-10-minute setup experience.")
+
+    guide_tab1, guide_tab2, guide_tab3, guide_tab4 = st.tabs(
+        [
+            "⚡ 10-Min Quickstart",
+            "🔄 Shared Data & Sync Matrix",
+            "🔑 Required Permissions",
+            "🛡️ Safety & Overwrite Policy",
+        ]
+    )
+
+    with guide_tab1:
+        st.markdown("#### ⚡ 10-Minute Time-to-Value Setup")
+        st.markdown(
+            """
+            1. **Step 1: Connect your HubSpot Account**  
+               - Navigate to the sidebar under **HubSpot CRM Settings**.
+               - Enter your **Private App Token** and click **Connect**.
+               - The app securely calls `GET /crm/v3/objects/contacts?limit=1` and `GET /account-info/v3/details` to fetch and store your Portal ID.
+            
+            2. **Step 2: Choose Data Ingestion Source**  
+               - **Option A (Staged Files):** Upload messy Excel/CSV exports from trade expos, WhatsApp, Meta Lead Ads, or website forms.
+               - **Option B (Direct CRM Sync):** Pull live contacts, associated companies, and deals directly from your HubSpot database via API.
+            
+            3. **Step 3: Run Pre-Flight Diagnostics & Hygiene**  
+               - Standardizes Indian mobile numbers into E.164 `+91XXXXXXXXXX`.
+               - Validates 6-digit postal PIN codes and cross-matches GSTIN state codes.
+               - Identifies fuzzy duplicates using RapidFuzz Token-Sort ratio with auto-merge backfills.
+            
+            4. **Step 4: Non-Destructive Push & Native Duplicate Merge**  
+               - Test with **Dry-Run Mode Enabled** (zero real mutations) to inspect simulated payloads.
+               - Once satisfied, push clean leads to HubSpot or merge duplicates via `POST /crm/v3/objects/contacts/merge`.
+            """
+        )
+
+    with guide_tab2:
+        st.markdown("#### 🔄 Shared Data & Property Mapping Matrix")
+        st.caption("How Indian lead fields and AI intelligence map directly into HubSpot standard and custom properties:")
+        
+        shared_data = [
+            {"Data Object": "Contact Mobile", "Source Field": "phone / mobile", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "phone (+91 E.164)", "Policy": "Enrich if blank / Standardize"},
+            {"Data Object": "Contact Email", "Source Field": "email", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "email (RFC 5322)", "Policy": "Primary deduplication key"},
+            {"Data Object": "First & Last Name", "Source Field": "full_name / first_name", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "firstname, lastname", "Policy": "Auto-split & title-case"},
+            {"Data Object": "Company Name", "Source Field": "company", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "company", "Policy": "Associated or created"},
+            {"Data Object": "City & State", "Source Field": "city, state", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "city, state", "Policy": "Standardized alias map"},
+            {"Data Object": "Postal Code", "Source Field": "pin_code", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "zip", "Policy": "Validated 6-digit prefix"},
+            {"Data Object": "GSTIN Tax ID", "Source Field": "gst_number", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "gst_number (custom)", "Policy": "State checksum verified"},
+            {"Data Object": "AI Extracted Intent", "Source Field": "notes_structured", "Sync Direction": "Ingest ➔ HubSpot CRM", "HubSpot Property": "hs_note_body / notes", "Policy": "Gemini Flash budget/intent"},
+            {"Data Object": "Duplicate Merges", "Source Field": "proposals_df", "Sync Direction": "Two-way (Native API)", "HubSpot Property": "contacts/merge endpoint", "Policy": "Consolidates secondary into primary"},
+        ]
+        st.dataframe(pd.DataFrame(shared_data), use_container_width=True)
+
+    with guide_tab3:
+        st.markdown("#### 🔑 Required HubSpot Account Scopes & Permissions")
+        st.markdown(
+            """
+            To install this app or generate a Private App Token, grant the following standard scopes:
+            
+            | Scope | Permission Type | Rationale |
+            | :--- | :---: | :--- |
+            | `crm.objects.contacts.read` | Read | Fetch contacts to scan hygiene and deduplicate |
+            | `crm.objects.contacts.write` | Write | Push standardized numbers, emails, and GSTINs |
+            | `crm.objects.companies.read` | Read | Read associated company details for B2B accounts |
+            | `crm.objects.companies.write` | Write | Link contacts to existing company records |
+            | `crm.schemas.custom.read` | Read | Inspect custom fields like `gst_number` |
+            
+            > **Security Guarantee:** Tokens are kept strictly in memory for the active session. Tokens are never logged, persisted to disk, or exposed in URLs.
+            """
+        )
+
+    with guide_tab4:
+        st.markdown("#### 🛡️ Non-Destructive Safety & Overwrite Policy")
+        st.markdown(
+            """
+            Unlike basic import tools that overwrite existing records, this integration uses **RevOps Non-Destructive Patch Architecture**:
+            
+            - **Never Overwrites Existing Valid Data:** If a contact already has a valid phone or email in HubSpot, our engine preserves it unless `overwrite=True` is explicitly instructed.
+            - **Fills Property Gaps:** Blank fields (e.g., missing PIN code, unformatted city, missing GST number) are enriched and backfilled non-destructively.
+            - **Safety-First Dry-Run Default:** All CRM sync operations simulate the exact API payloads in Dry-Run mode before live execution.
+            - **Native CRM Merges:** Duplicate pairs use HubSpot's official merge endpoint (`/crm/v3/objects/contacts/merge`), preserving sales history, email engagements, and deal associations on the primary contact.
+            """
+        )
+
+    if st.button("Close Guide", type="primary"):
+        st.session_state.show_marketplace_modal = False
+        st.rerun()
 
 
 def run_dataframe_pipeline(
@@ -830,6 +938,8 @@ def main() -> None:
 
     config = render_sidebar()
     render_audit_modal()
+    if st.session_state.get("show_marketplace_modal"):
+        show_marketplace_guide_dialog()
 
     ui_mode = config.get("ui_mode", "classic")
 
@@ -874,6 +984,12 @@ def main() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+    col_guide_btn, _ = st.columns([1, 3])
+    with col_guide_btn:
+        if st.button("📖 View Setup Guide", key="banner_guide_trigger_btn", use_container_width=True):
+            st.session_state.show_marketplace_modal = True
+            st.rerun()
 
     _render_ingestion_controls(config)
 
