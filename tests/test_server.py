@@ -122,3 +122,13 @@ def test_portal_quota_api_endpoint(client, tmp_path, monkeypatch):
     assert data["quota_used"] == 125
     assert data["quota_remaining"] == 375
     assert data["is_exceeded"] is False
+
+
+def test_public_documentation_endpoints(client):
+    """Verify /setup-guide, /privacy, and /terms are live and return valid HTML."""
+    for path in ["/setup-guide", "/privacy", "/terms"]:
+        resp = client.get(path)
+        assert resp.status_code == 200
+        assert "text/html" in resp.headers.get("content-type", "")
+        assert len(resp.text) > 100
+

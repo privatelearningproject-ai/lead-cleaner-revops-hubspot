@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | Lead Cleaner & RevOps Pipeline for HubSpot</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; background: #f8fafc; margin: 0; padding: 40px 20px; }
+        .container { max-width: 820px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 40px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); }
+        h1 { color: #0f172a; font-size: 26px; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 14px; }
+        h2 { color: #1e293b; font-size: 18px; margin-top: 28px; }
+        p, li { font-size: 14px; color: #334155; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Privacy Policy</h1>
+        <p><strong>Effective Date:</strong> October 12, 2026</p>
+        <p>This Privacy Policy describes how Lead Cleaner & RevOps Pipeline ("we", "us", or "our") processes data collected through our HubSpot App Marketplace integration.</p>
+
+        <h2>1. Data We Process</h2>
+        <p>When you install and authorize our application, we access the following HubSpot CRM data via official OAuth 2.0 APIs solely to perform lead hygiene and deduplication:</p>
+        <ul>
+            <li><strong>Contact Details:</strong> Names, phone numbers, email addresses, cities, postal PIN codes, and GSTIN identifiers.</li>
+            <li><strong>Company Associations:</strong> Company names and domain associations.</li>
+            <li><strong>Portal Metadata:</strong> HubSpot Portal ID (hub_id) and domain used for multi-tenant account isolation.</li>
+        </ul>
+
+        <h2>2. How We Use Data</h2>
+        <ul>
+            <li>To standardize phone numbers to international Indian E.164 formats (+91).</li>
+            <li>To validate 6-digit postal PIN codes and verify GSTIN state codes.</li>
+            <li>To identify duplicate clusters and execute contact consolidation.</li>
+            <li>To calculate hygiene quality scores and executive audit summaries.</li>
+        </ul>
+
+        <h2>3. Data Storage & Security</h2>
+        <ul>
+            <li><strong>No Persistent Contact Storing:</strong> Contact records processed in memory are never retained on our servers after execution.</li>
+            <li><strong>Audit Logs:</strong> Aggregated execution metrics and anonymized field hashes are stored in an encrypted database for audit history.</li>
+            <li><strong>Token Security:</strong> OAuth access and refresh tokens are encrypted at rest and isolated by Portal ID. We never print, expose, or log customer tokens.</li>
+        </ul>
+
+        <h2>4. Data Sharing & Third Parties</h2>
+        <p>We do not sell, rent, or trade your CRM data. Data is only communicated back to your authorized HubSpot portal via official HubSpot APIs over TLS 1.3 encrypted HTTPS.</p>
+
+        <h2>5. Data Deletion & Disconnection</h2>
+        <p>When you uninstall the app from your HubSpot portal or click <strong>Disconnect</strong> in the app settings, your access tokens are invalidated immediately and tenant configurations are purged.</p>
+
+        <h2>6. Contact Us</h2>
+        <p>For questions regarding this policy or data processing, contact us at <code>privacy@revopsbolt.in</code>.</p>
+
+        <div class="footer">
+            Lead Cleaner & RevOps Pipeline &bull; <a href="/setup-guide">Setup Guide</a> &bull; <a href="/terms">Terms of Service</a>
+        </div>
+    </div>
+</body>
+</html>

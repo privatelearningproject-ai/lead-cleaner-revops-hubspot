@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Guide | Lead Cleaner & RevOps Pipeline for HubSpot</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; background: #f8fafc; margin: 0; padding: 40px 20px; }
+        .container { max-width: 820px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 40px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); }
+        h1 { color: #0f172a; font-size: 28px; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 16px; }
+        h2 { color: #1e293b; font-size: 20px; margin-top: 32px; }
+        .badge { display: inline-block; background: #e0e7ff; color: #4338ca; padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 13px; margin-bottom: 16px; }
+        .step { background: #f8fafc; border-left: 4px solid #5e6ad2; padding: 16px 20px; margin: 20px 0; border-radius: 0 8px 8px 0; }
+        .step h3 { margin: 0 0 8px 0; font-size: 17px; color: #0f172a; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px 14px; text-align: left; }
+        th { background: #f1f5f9; font-weight: 600; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span class="badge">HubSpot Marketplace Integration Setup</span>
+        <h1>Lead Cleaner & RevOps Pipeline — Setup Guide</h1>
+        <p>This guide walks you through connecting your HubSpot portal, configuring data governance rules, and standardizing contact records in under 10 minutes.</p>
+
+        <h2>⚡ 10-Minute Quickstart Workflow</h2>
+        
+        <div class="step">
+            <h3>Step 1: Install & Authorize with HubSpot</h3>
+            <p>From the HubSpot App Marketplace listing, click <strong>Install app</strong>. You will be prompted to select your HubSpot portal and grant required CRM object permissions (contacts, companies, deals). Once authorized, you will be redirected to the Lead Cleaner dashboard with your Portal ID automatically recognized.</p>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Choose Ingestion Source</h3>
+            <p>Select your ingestion pipeline mode:</p>
+            <ul>
+                <li><strong>Vendor Spreadsheets (CSV / Excel):</strong> Upload offline trade expo, Meta Lead Ad, or WhatsApp lead files before importing to your CRM.</li>
+                <li><strong>Direct CRM Hygiene:</strong> Stream live contacts directly from HubSpot via API to scan existing records.</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Run Hygiene & Pre-Flight Diagnostics</h3>
+            <p>The normalization engine runs automated checks:</p>
+            <ul>
+                <li>Standardizes 10-digit Indian phone numbers to E.164 (<code>+91XXXXXXXXXX</code>).</li>
+                <li>Validates 6-digit postal PIN codes and cross-checks GSTIN state codes.</li>
+                <li>Identifies duplicate clusters using RapidFuzz name/email matching.</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Non-Destructive Sync & Native Merges</h3>
+            <p>By default, <strong>Dry-Run Safety Mode</strong> is active, simulating all API calls without live mutations. When ready, click <strong>Sync Patches to HubSpot</strong> or merge duplicates using HubSpot's native merge endpoint.</p>
+        </div>
+
+        <h2>🔄 Shared Data & Sync Matrix</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data Object</th>
+                    <th>Source Field</th>
+                    <th>Sync Direction</th>
+                    <th>HubSpot Property</th>
+                    <th>Overwrite Policy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Contact Mobile</td>
+                    <td>phone / mobile</td>
+                    <td>Bi-directional</td>
+                    <td>phone (+91 E.164)</td>
+                    <td>Fills blank / Standardizes format</td>
+                </tr>
+                <tr>
+                    <td>Contact Email</td>
+                    <td>email</td>
+                    <td>Bi-directional</td>
+                    <td>email</td>
+                    <td>Deduplication key (RFC 5322)</td>
+                </tr>
+                <tr>
+                    <td>First & Last Name</td>
+                    <td>full_name / name</td>
+                    <td>Bi-directional</td>
+                    <td>firstname, lastname</td>
+                    <td>Auto-splits and title-cases</td>
+                </tr>
+                <tr>
+                    <td>Company Name</td>
+                    <td>company</td>
+                    <td>Bi-directional</td>
+                    <td>company</td>
+                    <td>Associates or creates record</td>
+                </tr>
+                <tr>
+                    <td>City & State</td>
+                    <td>city, state</td>
+                    <td>Bi-directional</td>
+                    <td>city, state</td>
+                    <td>Standardized alias mapping</td>
+                </tr>
+                <tr>
+                    <td>Duplicate Clusters</td>
+                    <td>proposals_df</td>
+                    <td>Two-way (Native API)</td>
+                    <td>contacts/merge</td>
+                    <td>Consolidates secondary into primary</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🛡️ Safety & Non-Destructive Policy</h2>
+        <ul>
+            <li><strong>Never Overwrites Existing Valid Data:</strong> Valid properties in HubSpot are preserved unless explicit overwrite is enabled.</li>
+            <li><strong>Gap-Fill Only:</strong> Missing phone numbers, postal codes, and city locations are enriched non-destructively.</li>
+            <li><strong>Native HubSpot Merge:</strong> Contact merges preserve timeline history, email engagements, and deal associations.</li>
+        </ul>
+
+        <div class="footer">
+            Lead Cleaner & RevOps Pipeline &bull; <a href="/privacy">Privacy Policy</a> &bull; <a href="/terms">Terms of Service</a> &bull; Support: support@revopsbolt.in
+        </div>
+    </div>
+</body>
+</html>

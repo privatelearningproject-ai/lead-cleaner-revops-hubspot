@@ -12,6 +12,7 @@ from __future__ import annotations
 import os
 import secrets
 import urllib.parse
+from pathlib import Path
 from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
@@ -200,3 +201,31 @@ def get_portal_quota(portal_id: str) -> Dict[str, Any]:
         "quota_remaining": quota["remaining"],
         "is_exceeded": quota["is_exceeded"],
     }
+
+
+@app.get("/setup-guide", response_class=HTMLResponse)
+def get_setup_guide() -> HTMLResponse:
+    """Public setup documentation required for HubSpot Marketplace listing."""
+    guide_path = Path(__file__).resolve().parent / "docs" / "setup-guide.html"
+    if guide_path.exists():
+        return HTMLResponse(content=guide_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Setup Guide</h1><p>Documentation coming soon.</p>")
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+def get_privacy_policy() -> HTMLResponse:
+    """Public privacy policy required for HubSpot Marketplace listing."""
+    privacy_path = Path(__file__).resolve().parent / "docs" / "privacy-policy.html"
+    if privacy_path.exists():
+        return HTMLResponse(content=privacy_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Privacy Policy</h1><p>Privacy policy coming soon.</p>")
+
+
+@app.get("/terms", response_class=HTMLResponse)
+def get_terms_of_service() -> HTMLResponse:
+    """Public terms of service required for HubSpot Marketplace listing."""
+    terms_path = Path(__file__).resolve().parent / "docs" / "terms-of-service.html"
+    if terms_path.exists():
+        return HTMLResponse(content=terms_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Terms of Service</h1><p>Terms of service coming soon.</p>")
+
