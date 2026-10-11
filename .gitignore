@@ -1,0 +1,34 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environment files & secrets
+.env
+hubspot key
+
+# SQLite Database
+*.db
+*.sqlite3
+
+# Output directory
+output/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,51 @@
+Full Name,Contact Number,Email Address,Town,State Name,Pincode,GSTIN,Consent Source,Notes
+Aarav Sharma,09820012345,aarav.sharma@example.com,Bombay,MH,400001,27ABCDE1234F1Z5,Website Form,Looking for enterprise plan under 5 lakhs
+Aarav Sharma,+91 98200 12345,aarav.s@work.com,Mumbai,Maharashtra,400001,27ABCDE1234F1Z5,,Duplicate contact with different email
+Priya Patel,98765-43210,priya.patel@test.co.in,GGN,,122002,06AAAAA0000A1Z5,Event booth,Met at Delhi Expo
+Priya Patel,9876543210,priyap@gmail.com,Gurgaon,Haryana,122002,,Inbound WhatsApp,Urgent inquiry for software licenses
+Vikram Malhotra,8123456789,VIKRAM@VENTURES.COM,Bangalore,Karnataka,560001,29ABCDE1234F1Z5,Cold Call,Interested in 10 user seats
+Vikram Malhotra,8123456789,vikram@ventures.com,Bengaluru,KA,560001,,,Duplicate lead
+Ananya Gupta,919123456780,ananya.g@guptafoods.com,Calcutta,West Bengal,700001,19AAAAA1111A1Z5,Meta Lead Ad,Budget around 2L
+Rajesh Kumar,12345,bad-email,Patna,Bihar,800001,,,Invalid phone and email test
+Sunita Rao,9988776655,sunita@hyderabadtech.in,Secunderabad,Telangana,500003,36AAAAA1234A1Z5,Organic Search,Needs quote
+Deepak Verma,+91-7890123456,deepak.verma@domain.com,Noida,UP,201301,09AAAAA9999A1Z5,Referral,Wants product demo next Monday
+Rahul Joshi,00919811122233,rahul.j@tata.com,Delhi,DL,110001,07AAAAA1111A1Z5,Web,International format 0091
+Sneha Kulkarni,+91 (982) 301-4455,sneha.k@pune.co,Pune,MH,411001,27AAAAA2222A1Z5,Form,Phone with parentheses and dashes
+Amit Singhania,022-26543210,amit@mumbaibiz.com,Mumbai,Maharashtra,400051,27AAAAA3333A1Z5,Inbound,Landline phone starting with 022
+Kavita Nair,011-23456789,kavita.n@delhi.org,Delhi,Delhi,110016,07AAAAA4444A1Z5,Event,Landline 011
+Rohan Mehta,98200,rohan@mehta.in,Bombay,MH,400020,27AAAAA5555A1Z5,Referral,Short phone 5 digits
+Pooja Shah,5551234567,pooja@shah.com,Ahmedabad,GJ,380001,24AAAAA6666A1Z5,Form,10-digit starting with 5
+Manoj Tiwary,+91 09876543210,manoj@tiwary.in,Patna,Bihar,800001,10AAAAA7777A1Z5,WhatsApp,Country code plus trunk zero
+Divya Deshmukh,9820012345678,divya@pune.org,Pune,Maharashtra,411004,27AAAAA8888A1Z5,Call,13 digits excess
+Harish Chawla,+1 202 555 0199,harish@usaindia.com,Delhi,DL,110001,07AAAAA9999A1Z5,Form,US phone +1
+Meera Nambiar,98450 12345,meera@cochin.in,Kochi,Kerala,682001,32AAAAA1234A1Z5,Web,Space separated 10-digit
+Sanjay Bansal,9810011223,   SANJAY@BANSALCORP.COM  ,New Delhi,Delhi,110025,07BBBBB1234B1Z5,Expo,Uppercase with whitespace
+Neha Kapoor,9811223344,neha.kapoor@,Gurgaon,Haryana,122018,06BBBBB2345B1Z5,Form,Incomplete email missing domain
+Arjun Reddy,9849012345,@hyderabad.org,Hyderabad,Telangana,500034,36BBBBB3456B1Z5,Web,Missing local part
+Swati Mishra,9830012345,swati@kolkata,Calcutta,WB,700029,19BBBBB4567B1Z5,Ad,Missing top level domain
+Alok Saxena,9415012345,alok..saxena@lucknow.com,Lucknow,UP,226001,09BBBBB5678B1Z5,Call,Consecutive dots in email
+Shweta Ghosh,9831012345,shweta ghosh@calcutta.in,Kolkata,West Bengal,700019,19BBBBB6789B1Z5,Form,Space in email address
+Rakesh Jhunjhun,9821012345,rakesh+invest@traders.co.in,Bombay,MH,400005,27BBBBB7890B1Z5,Web,Email with plus tag
+Tanvi Kothari,9822012345,tanvi.kothari@sales.ventures.in,Pune,Maharashtra,411007,27BBBBB8901B1Z5,Inbound,Multilevel subdomain email
+Gaurav Chopra,9810123456,gaurav@domain.c,Delhi,DL,110007,07BBBBB9012B1Z5,Referral,Single char TLD
+Pallavi Sen,9832012345,pallavi@,Siliguri,WB,734001,19BBBBB0123B1Z5,Web,Truncated email
+Manish Agarwal,9829012345,manish@jaipur.com,Jaipur,Rajasthan,302001,08CCCCC1234C1Z5,Trade Fair,Jaipur canonical
+Geeta Krishnan,9840012345,geeta@chennai.in,Madras,Tamil Nadu,600001,33CCCCC2345C1Z5,Ad,Madras alias to Chennai
+Tarun Chadha,9814012345,tarun@chandigarh.org,Chandigarh,Punjab,160017,03CCCCC3456C1Z5,Web,Chandigarh
+Vandana Bhat,9880012345,vandana@bangalore.co,Bangalore,KA,560025,29CCCCC4567C1Z5,Form,Bangalore alias
+Nitin Gadgil,9823098765,nitin@gadgil.in,Atlantis,Maharashtra,400001,27CCCCC5678C1Z5,Call,Unmapped town Atlantis
+Preeti Jain,9826012345,preeti@indore.in,Indore,MP,452001,23CCCCC6789C1Z5,Web,Indore town
+Chetan Bhagat,9818012345,chetan@delhi.com,New Delhi,DL,110003,07CCCCC7890C1Z5,Event,New Delhi alias to Delhi
+Ritu Chawla,9872012345,ritu@ludhiana.org,Ludhiana,Punjab,141001,03CCCCC8901C1Z5,Form,Ludhiana
+Karthik Subramanian,9841012345,karthik@madras.net,Chennai,TN,600028,33CCCCC9012C1Z5,Web,Chennai canonical
+Fatima Sheikh,9848012345,fatima@secunderabad.co,Secunderabad,TS,500003,36CCCCC0123C1Z5,Ad,Secunderabad alias to Hyderabad
+Varun Grover,9811099887,varun@grover.in,Gurgaon,,122002,06DDDDD1234D1Z5,Form,Blank state with Haryana PIN 122002
+Kiran Mazumdar,9845112233,kiran@biotech.in,Bengaluru,,560001,29DDDDD2345D1Z5,Event,Blank state with Karnataka PIN 560001
+Sourav Ganguly,9831112233,sourav@cricket.in,Kolkata,,700001,19DDDDD3456D1Z5,Referral,Blank state with WB PIN 700001
+Pradeep Srivastava,9415112233,pradeep@noida.in,Noida,,201301,09DDDDD4567D1Z5,Web,Blank state with UP PIN 201301
+Shashi Tharoor,9847112233,shashi@trivandrum.org,Trivandrum,Kerala,695001,32DDDDD5678D1Z5,Inbound,Kerala
+Jayant Sinha,9431112233,jayant@patna.co,Patna,,800001,10DDDDD6789D1Z5,Form,Blank state with Bihar PIN 800001
+Rohit Sharma,9820112233,rohit@mumbai.org,Mumbai,,400001,27DDDDD7890D1Z5,Web,Blank state with MH PIN 400001
+Arvind Kejriwal,9810112233,arvind@delhi.gov,Delhi,,110001,07DDDDD8901D1Z5,Event,Blank state with Delhi PIN 110001
+Nandan Nilekani,9880112233,nandan@infosys.com,Bengaluru,Delhi,560001,29DDDDD9012D1Z5,Form,State mismatch with GST
+Harsh Goenka,9821112233,harsh@rpg.in,Bombay,MH,400001,27DDDDD0000D1A5,Web,Malformed GST missing Z

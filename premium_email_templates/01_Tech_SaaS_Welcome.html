@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Our Platform</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f6f9fc; -webkit-font-smoothing: antialiased; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f6f9fc; padding-bottom: 40px; }
+        .main { background-color: #ffffff; margin: 40px auto; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; }
+        .header { padding: 40px 40px 20px; text-align: left; }
+        .logo { width: 120px; height: auto; }
+        .content { padding: 0 40px 40px; color: #425466; line-height: 1.6; font-size: 16px; }
+        h1 { color: #0a2540; font-size: 24px; font-weight: 600; margin-bottom: 20px; }
+        .button { display: inline-block; background-color: #635bff; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 4px; font-weight: 500; font-size: 16px; margin-top: 20px; transition: background-color 0.2s; }
+        .button:hover { background-color: #4b45cf; }
+        .footer { text-align: center; padding: 20px 40px; color: #8898aa; font-size: 13px; background-color: #f6f9fc; }
+        .footer a { color: #635bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <table class="wrapper" width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        <tr>
+            <td align="center">
+                <table class="main" width="100%" max-width="600" cellpadding="0" cellspacing="0" role="presentation">
+                    <tr>
+                        <td class="header">
+                            <img src="https://via.placeholder.com/120x40/0a2540/ffffff?text=LOGO" alt="Logo" class="logo">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="content">
+                            <h1>Welcome to the future of work.</h1>
+                            <p>Hi {{ contact.firstname | default('there') }},</p>
+                            <p>We're thrilled to have you on board. Our platform is designed to help your team move faster, stay aligned, and build better products together.</p>
+                            <p>To get the most out of your account, we recommend starting with our 3-minute quickstart guide.</p>
+                            <a href="#" class="button">Explore the Quickstart Guide</a>
+                            <p style="margin-top: 30px; font-size: 14px; color: #8898aa;">Need help? Reply to this email and our support team will jump right in.</p>
+                        </td>
+                    </tr>
+                </table>
+                <table width="100%" max-width="600" cellpadding="0" cellspacing="0" role="presentation">
+                    <tr>
+                        <td class="footer">
+                            <p>&copy; 2026 Your SaaS Company. All rights reserved.<br>
+                            123 Innovation Drive, San Francisco, CA 94107</p>
+                            <p><a href="#">Unsubscribe</a> &bull; <a href="#">Privacy Policy</a></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
