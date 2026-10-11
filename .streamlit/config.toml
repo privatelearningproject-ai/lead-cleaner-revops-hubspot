@@ -1,0 +1,30 @@
+[theme]
+base = "light"
+primaryColor = "#FF5C35"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8FAFC"
+textColor = "#1E293B"
+borderColor = "#E2E8F0"
+showWidgetBorder = true
+showSidebarBorder = true
+baseRadius = "10px"
+buttonRadius = "8px"
+
+font = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+headingFontSizes = ["30px", "24px", "20px", "16px", "14px", "12px"]
+headingFontWeights = [700, 600, 600, 600, 500, 500]
+linkUnderline = false
+
+chartCategoricalColors = ["#FF5C35", "#00A389", "#2563EB", "#7C3AED", "#F59E0B", "#10B981", "#64748B"]
+
+[theme.sidebar]
+backgroundColor = "#F8FAFC"
+secondaryBackgroundColor = "#F1F5F9"
+textColor = "#0F172A"
+borderColor = "#E2E8F0"
+primaryColor = "#FF5C35"
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = true

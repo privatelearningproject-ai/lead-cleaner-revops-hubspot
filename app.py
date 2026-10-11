@@ -55,10 +55,16 @@ def init_session_state() -> None:
         st.session_state.sync_results = None
     if "active_file_name" not in st.session_state:
         st.session_state.active_file_name = None
+    if "hubspot_connected" not in st.session_state:
+        st.session_state.hubspot_connected = False
+    if "hubspot_portal_id" not in st.session_state:
+        st.session_state.hubspot_portal_id = None
+    if "hubspot_token" not in st.session_state:
+        st.session_state.hubspot_token = None
 
 
 def render_sidebar() -> Dict[str, Any]:
-    """Render sidebar configuration controls and audit logs viewer."""
+    """Render sidebar configuration controls, HubSpot connection, and quota viewer."""
     st.sidebar.title("⚙️ Configuration")
 
     st.sidebar.markdown("### Matching & Quality Thresholds")
@@ -95,30 +101,62 @@ def render_sidebar() -> Dict[str, Any]:
         st.sidebar.warning("⚠️ Live Mode Active (Mutations Enabled)")
 
     env_token = get_token_from_env()
+    stored_token = st.session_state.get("hubspot_token")
+    token_display = stored_token if stored_token is not None else (env_token or "")
+
     token_input = st.sidebar.text_input(
         "HubSpot Private App Token",
-        value=env_token or "",
+        value=token_display,
         type="password",
         help="HubSpot token (starts with pat-). Defaults to .env if configured.",
     )
 
-    if token_input:
-        st.sidebar.caption("🔑 Token configured")
+    is_connected = st.session_state.get("hubspot_connected", False)
+    active_portal = st.session_state.get("hubspot_portal_id")
+
+    # Connect / Disconnect Action & Status Line
+    col_conn_btn, col_conn_status = st.sidebar.columns([1, 1])
+    if not is_connected:
+        with col_conn_btn:
+            if st.button("🔗 Connect", type="primary", use_container_width=True, key="hs_connect_btn"):
+                if not token_input.strip():
+                    st.sidebar.error("Please enter a token first.")
+                else:
+                    with st.sidebar.spinner("Validating with HubSpot API..."):
+                        from hubspot.connection import validate_and_connect
+                        ok, portal_id_res, err_msg = validate_and_connect(token_input.strip())
+                        if ok:
+                            st.session_state.hubspot_connected = True
+                            st.session_state.hubspot_portal_id = portal_id_res
+                            st.session_state.hubspot_token = token_input.strip()
+                            st.rerun()
+                        else:
+                            st.sidebar.error(f"❌ {err_msg}")
+        with col_conn_status:
+            st.sidebar.caption("⚪ **Not connected**")
     else:
-        st.sidebar.caption("⚠️ No token configured (Dry-run mock used)")
+        with col_conn_btn:
+            if st.button("🔌 Disconnect", type="secondary", use_container_width=True, key="hs_disconnect_btn"):
+                st.session_state.hubspot_connected = False
+                st.session_state.hubspot_portal_id = None
+                st.session_state.hubspot_token = ""
+                st.rerun()
+        st.sidebar.markdown(f":green[**Connected to portal {active_portal}**]")
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🏢 HubSpot Multi-Tenant Portal")
-    known_portals = [p["portal_id"] for p in list_portals()]
-    portal_options = ["default_portal"] + [p for p in known_portals if p != "default_portal"]
-    portal_id = st.sidebar.text_input(
-        "Connected Portal ID",
-        value="default_portal",
-        help="HubSpot Account (Portal) ID. Governs OAuth credentials and tenant quota isolation.",
-    )
+    if is_connected and active_portal:
+        st.sidebar.info(f"Connected Portal: `{active_portal}`")
+        portal_id = active_portal
+    else:
+        portal_id = st.sidebar.text_input(
+            "Connected Portal ID",
+            value="default_portal",
+            help="HubSpot Account (Portal) ID. Governs OAuth credentials and tenant quota isolation.",
+        )
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🤖 Cloud LLM Note Enrichment (Gemini Flash)")
+    st.sidebar.markdown("### ⚡ Tenant Quota Widget")
 
     # Fetch tenant quota status
     quota = get_enrichment_quota(portal_id)
@@ -127,7 +165,18 @@ def render_sidebar() -> Dict[str, Any]:
     remaining = quota["remaining"]
     is_exceeded = quota["is_exceeded"]
 
-    st.sidebar.markdown(f"**Freemium Quota:** `{used} / {limit}` contacts used")
+    st.sidebar.markdown(
+        f"""
+        <div class="quota-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-weight:700; font-size:0.85rem; color:#0F172A;">Freemium Quota</span>
+                <span class="badge-pill badge-coral">{used} / {limit} Used</span>
+            </div>
+            <div style="font-size:0.78rem; color:#64748B;">500 Free Leads Included</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     quota_pct = min(1.0, used / limit if limit > 0 else 1.0)
     st.sidebar.progress(quota_pct)
     st.sidebar.caption(f"✨ **{remaining}** free contacts remaining")
@@ -321,6 +370,336 @@ def to_csv_bytes(df: pd.DataFrame) -> bytes:
     return export_df.to_csv(index=False).encode("utf-8")
 
 
+def inject_custom_css() -> None:
+    """Inject clean, executive-tier SaaS CSS inspired by HubSpot design system."""
+    st.html(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --hs-coral: #FF5C35;
+            --hs-coral-hover: #E54B24;
+            --hs-coral-light: #FFF1EE;
+            --hs-teal: #00A389;
+            --hs-teal-light: #E6F7F5;
+            --hs-dark: #0F172A;
+            --hs-slate: #1E293B;
+            --hs-muted: #64748B;
+            --hs-border: #E2E8F0;
+        }
+
+        html, body, [class*="css"] {
+            font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif !important;
+            color: var(--hs-slate);
+        }
+
+        /* Hero Header Banner */
+        .hs-hero-banner {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+            border-radius: 16px;
+            padding: 24px 28px;
+            color: #FFFFFF;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .hs-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 92, 53, 0.2);
+            border: 1px solid rgba(255, 92, 53, 0.4);
+            color: #FF8F70;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+        .hs-hero-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            color: #FFFFFF;
+            margin: 0 0 8px 0;
+            line-height: 1.2;
+        }
+        .hs-hero-subtitle {
+            font-size: 0.95rem;
+            color: #94A3B8;
+            margin: 0;
+            line-height: 1.5;
+            max-width: 900px;
+        }
+
+        /* Metric Cards */
+        .metric-card-container {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+        }
+        .metric-card-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+            border-color: #CBD5E1;
+        }
+        .metric-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .metric-title {
+            color: #64748B;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .metric-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #0F172A;
+            line-height: 1.1;
+            margin-bottom: 6px;
+        }
+        .metric-sub {
+            font-size: 0.8rem;
+            color: #64748B;
+        }
+
+        /* Pill Badges */
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .badge-teal { background: #E6F7F5; color: #00A389; }
+        .badge-coral { background: #FFF1EE; color: #FF5C35; }
+        .badge-amber { background: #FEF3C7; color: #B45309; }
+        .badge-slate { background: #F1F5F9; color: #1E293B; }
+        .badge-red { background: #FEE2E2; color: #DC2626; }
+
+        /* Buttons */
+        button[kind="primary"] {
+            background: linear-gradient(135deg, #FF5C35 0%, #FF724E 100%) !important;
+            border: none !important;
+            color: #FFFFFF !important;
+            font-weight: 600 !important;
+            border-radius: 8px !important;
+            padding: 10px 20px !important;
+            box-shadow: 0 4px 14px rgba(255, 92, 53, 0.28) !important;
+            transition: all 0.2s ease !important;
+        }
+        button[kind="primary"]:hover {
+            background: linear-gradient(135deg, #E54B24 0%, #FF5C35 100%) !important;
+            box-shadow: 0 6px 18px rgba(255, 92, 53, 0.4) !important;
+            transform: translateY(-1px) !important;
+        }
+        button[kind="secondary"] {
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            color: #1E293B !important;
+            transition: all 0.2s ease !important;
+        }
+        button[kind="secondary"]:hover {
+            border-color: #FF5C35 !important;
+            color: #FF5C35 !important;
+        }
+
+        /* Tabs */
+        div[data-testid="stTabs"] button {
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
+            padding: 12px 18px !important;
+            color: #64748B !important;
+            border-bottom: 2px solid transparent !important;
+        }
+        div[data-testid="stTabs"] button[aria-selected="true"] {
+            color: #FF5C35 !important;
+            border-bottom: 2px solid #FF5C35 !important;
+        }
+
+        /* Sidebar Progress Bar Gradient */
+        div[data-testid="stSidebar"] div[data-testid="stProgress"] > div > div > div {
+            background: linear-gradient(90deg, #FF5C35 0%, #FF8F70 100%) !important;
+            border-radius: 9999px !important;
+        }
+
+        /* Sidebar Quota Widget Box */
+        .quota-box {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+
+        /* Dataframe styling */
+        div[data-testid="stDataFrame"] {
+            border-radius: 10px !important;
+            border: 1px solid #E2E8F0 !important;
+            overflow: hidden;
+        }
+        </style>
+        """
+    )
+
+
+def render_preflight_diagnostics(is_dry_run: bool) -> None:
+    """Render Step 2: Live Progress & Pre-flight Diagnostics."""
+    st.markdown("### 2. Pre-flight Diagnostics & Engine Health")
+    with st.container(border=True):
+        col_d1, col_d2, col_d3 = st.columns(3)
+        with col_d1:
+            st.markdown(
+                """
+                <div style="margin-bottom:8px;">
+                    <span class="badge-pill badge-teal">● Active</span>
+                    <strong style="margin-left:6px; color:#0F172A;">Mobile Normalizer</strong>
+                </div>
+                <div style="font-size:0.8rem; color:#64748B;">Standardizes Indian 10-digit numbers to E.164 (+91)</div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                """
+                <div style="margin-top:12px; margin-bottom:8px;">
+                    <span class="badge-pill badge-teal">● Active</span>
+                    <strong style="margin-left:6px; color:#0F172A;">PIN Code Engine</strong>
+                </div>
+                <div style="font-size:0.8rem; color:#64748B;">Cross-checks 6-digit postal codes against state rules</div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col_d2:
+            st.markdown(
+                """
+                <div style="margin-bottom:8px;">
+                    <span class="badge-pill badge-teal">● Active</span>
+                    <strong style="margin-left:6px; color:#0F172A;">GSTIN Validator</strong>
+                </div>
+                <div style="font-size:0.8rem; color:#64748B;">15-char checksum verification & state alignment check</div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                """
+                <div style="margin-top:12px; margin-bottom:8px;">
+                    <span class="badge-pill badge-teal">● Active</span>
+                    <strong style="margin-left:6px; color:#0F172A;">Fuzzy Deduplication</strong>
+                </div>
+                <div style="font-size:0.8rem; color:#64748B;">Token-sort clustering with exact merge backfilling</div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with col_d3:
+            st.markdown(
+                f"""
+                <div style="margin-bottom:8px;">
+                    <span class="badge-pill {'badge-teal' if is_dry_run else 'badge-amber'}">● {'Dry-Run Safe' if is_dry_run else 'Live Mutations'}</span>
+                    <strong style="margin-left:6px; color:#0F172A;">HubSpot CRM Safety</strong>
+                </div>
+                <div style="font-size:0.8rem; color:#64748B;">{'Non-destructive simulated sync active' if is_dry_run else 'Live CRM mutations enabled'}</div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                """
+                <div style="margin-top:12px; margin-bottom:8px;">
+                    <span class="badge-pill badge-coral">● AI Ready</span>
+                    <strong style="margin-left:6px; color:#0F172A;">Gemini 1.5 Flash</strong>
+                </div>
+                <div style="font-size:0.8rem; color:#64748B;">Freemium note enrichment with budget & intent extraction</div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+
+def render_modern_kpi_cards(results: Dict[str, Any]) -> None:
+    """Render modern rounded metric cards with drop shadows and pill badges."""
+    stats = results["stats"]
+    total_rows = stats["total_rows"]
+    cleaned_count = len(results["cleaned_df"])
+    cleaned_pct = stats.get("cleaned_pct", 0.0)
+    review_count = len(results["review_df"])
+    review_pct = stats.get("review_pct", 0.0)
+    dedupe_count = len(results["proposals_df"])
+    avg_score = stats.get("avg_quality_score", 0.0)
+
+    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+    with kpi1:
+        st.markdown(
+            f"""
+            <div class="metric-card-container">
+                <div class="metric-top">
+                    <span class="metric-title">Total Records</span>
+                    <span class="badge-pill badge-slate">Batch Total</span>
+                </div>
+                <div class="metric-number">{total_rows}</div>
+                <div class="metric-sub">Ingested into pipeline</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with kpi2:
+        st.markdown(
+            f"""
+            <div class="metric-card-container">
+                <div class="metric-top">
+                    <span class="metric-title">Cleaned Leads</span>
+                    <span class="badge-pill badge-teal">🟢 Cleaned {cleaned_pct}%</span>
+                </div>
+                <div class="metric-number">{cleaned_count}</div>
+                <div class="metric-sub">Approved for CRM sync</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with kpi3:
+        st.markdown(
+            f"""
+            <div class="metric-card-container">
+                <div class="metric-top">
+                    <span class="metric-title">Review Needed</span>
+                    <span class="badge-pill badge-amber">🟡 Flagged {review_pct}%</span>
+                </div>
+                <div class="metric-number">{review_count}</div>
+                <div class="metric-sub">Requires human inspection</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with kpi4:
+        st.markdown(
+            f"""
+            <div class="metric-card-container">
+                <div class="metric-top">
+                    <span class="metric-title">Quality Score</span>
+                    <span class="badge-pill badge-coral">✨ {avg_score:.1f} / 100</span>
+                </div>
+                <div class="metric-number">{avg_score:.1f}<span style="font-size:1rem; color:#64748B;">/100</span></div>
+                <div class="metric-sub">Duplicate Clusters: <strong>{dedupe_count}</strong></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def _render_crm_push_controls(results: Dict[str, Any], config: Dict[str, Any]) -> None:
     """Render HubSpot CRM Push section with dry-run simulation or live confirmation."""
     st.markdown("### HubSpot CRM Push")
@@ -347,12 +726,14 @@ def _render_crm_push_controls(results: Dict[str, Any], config: Dict[str, Any]) -
 def _render_ingestion_controls(config: Dict[str, Any]) -> None:
     """Render data ingestion controls (file upload or live HubSpot fetch)."""
     st.markdown("### 1. Ingest Leads")
-    intake_mode = st.radio(
+    intake_mode = st.segmented_control(
         "Select Data Ingestion Source:",
-        options=["📂 Upload File (CSV / Excel)", "🔄 Fetch Direct from HubSpot CRM (API)"],
-        horizontal=True,
+        options=["📂 Upload File (CSV / Excel)", "🔄 Direct HubSpot CRM Sync"],
+        default="📂 Upload File (CSV / Excel)",
         help="Choose between staging raw files or scanning your live HubSpot CRM contact database.",
     )
+    if not intake_mode:
+        intake_mode = "📂 Upload File (CSV / Excel)"
 
     if intake_mode == "📂 Upload File (CSV / Excel)":
         uploaded_file = st.file_uploader(
@@ -407,39 +788,45 @@ def _render_ingestion_controls(config: Dict[str, Any]) -> None:
         with col_h2:
             st.write(f"🏢 **Portal ID:** `{config.get('portal_id', 'default_portal')}`")
 
-        if st.button("🔄 Fetch & Clean HubSpot Contacts", type="primary"):
-            with st.spinner("Streaming contacts from HubSpot CRM via API and running hygiene pipeline..."):
-                try:
-                    client = HubSpotClient(
-                        token=config.get("token"),
-                        portal_id=config.get("portal_id"),
-                        dry_run=config["dry_run"],
-                    )
-                    raw_contacts = client.fetch_contacts(max_records=fetch_limit)
-                    if not raw_contacts:
-                        st.warning("No contacts found in HubSpot or client in dry-run mock mode without live token. Connect your HubSpot App or add a Private App Token to fetch live data.")
-                    else:
-                        crm_df = client.contacts_to_dataframe(raw_contacts)
-                        source_label = f"HubSpot_Portal_{config.get('portal_id', 'CRM')}_Contacts"
-                        results = run_dataframe_pipeline(
-                            df=crm_df,
-                            source_name=source_label,
-                            fuzzy_thresh=config["fuzzy_threshold"],
-                            quality_cutoff=config["quality_cutoff"],
+        is_connected = st.session_state.get("hubspot_connected", False)
+        if not is_connected:
+            st.warning("⚠️ **HubSpot Not Connected:** Please enter your Private App Token and click **Connect** in the sidebar to scan live CRM records.")
+            st.button("🔄 Fetch & Clean HubSpot Contacts", type="primary", disabled=True, help="Connect to HubSpot in the sidebar first.")
+        else:
+            if st.button("🔄 Fetch & Clean HubSpot Contacts", type="primary"):
+                with st.spinner("Streaming contacts from HubSpot CRM via API and running hygiene pipeline..."):
+                    try:
+                        client = HubSpotClient(
+                            token=config.get("token"),
+                            portal_id=config.get("portal_id"),
                             dry_run=config["dry_run"],
-                            enrich=config.get("enrich", False),
-                            portal_id=config.get("portal_id", "default_portal"),
                         )
-                        st.session_state.pipeline_results = results
-                        st.session_state.active_file_name = source_label
-                        st.success(f"✅ Successfully fetched {len(raw_contacts)} contacts and executed cleaning pipeline!")
-                        st.rerun()
-                except Exception as e:
-                    st.error(f"❌ Failed to fetch from HubSpot CRM: {e}")
+                        raw_contacts = client.fetch_contacts(max_records=fetch_limit)
+                        if not raw_contacts:
+                            st.warning("No contacts found in HubSpot or client in dry-run mock mode without live token. Connect your HubSpot App or add a Private App Token to fetch live data.")
+                        else:
+                            crm_df = client.contacts_to_dataframe(raw_contacts)
+                            source_label = f"HubSpot_Portal_{config.get('portal_id', 'CRM')}_Contacts"
+                            results = run_dataframe_pipeline(
+                                df=crm_df,
+                                source_name=source_label,
+                                fuzzy_thresh=config["fuzzy_threshold"],
+                                quality_cutoff=config["quality_cutoff"],
+                                dry_run=config["dry_run"],
+                                enrich=config.get("enrich", False),
+                                portal_id=config.get("portal_id", "default_portal"),
+                            )
+                            st.session_state.pipeline_results = results
+                            st.session_state.active_file_name = source_label
+                            st.success(f"✅ Successfully fetched {len(raw_contacts)} contacts and executed cleaning pipeline!")
+                            st.rerun()
+                    except Exception as e:
+                        st.error(f"❌ Failed to fetch from HubSpot CRM: {e}")
 
 
 def main() -> None:
     init_session_state()
+    inject_custom_css()
 
     config = render_sidebar()
     render_audit_modal()
@@ -461,12 +848,31 @@ def main() -> None:
                 _render_crm_push_controls(st.session_state.pipeline_results, config)
         return
 
-    # Classic Layout
-    st.title("🧹 Lead Cleaner for Small Businesses (India)")
+    # Classic Layout - SaaS Executive Tier Banner
     st.markdown(
-        "Private RevOps lead hygiene and HubSpot ingestion pipeline. "
-        "Standardizes **Indian mobile formats (+91)**, verifies **PIN code prefixes**, checks **GSTIN state alignment**, "
-        "detects **fuzzy duplicates**, and syncs clean contacts non-destructively."
+        f"""
+        <div class="hs-hero-banner">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <div class="hs-hero-badge">🏢 HubSpot Marketplace Ready</div>
+                    <div class="hs-hero-title">🧹 Lead Cleaner for Small Businesses (India)</div>
+                    <p class="hs-hero-subtitle">
+                        Enterprise RevOps lead hygiene and HubSpot ingestion pipeline. Standardizes <strong>Indian mobile formats (+91)</strong>, 
+                        verifies <strong>PIN code prefixes</strong>, checks <strong>GSTIN state alignment</strong>, and consolidates duplicate records non-destructively.
+                    </p>
+                </div>
+                <div style="text-align:right;">
+                    <span class="badge-pill {'badge-teal' if config.get('dry_run', True) else 'badge-amber'}">
+                        {'🟢 Dry-Run Mode Active' if config.get('dry_run', True) else '⚠️ Live Mode Active'}
+                    </span>
+                    <div style="font-size:0.75rem; color:#94A3B8; margin-top:6px;">
+                        Portal: <strong>{config.get('portal_id', 'default_portal')}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
     _render_ingestion_controls(config)
@@ -476,34 +882,22 @@ def main() -> None:
     if results is not None:
         stats = results["stats"]
 
-        st.markdown("---")
-        st.markdown("### 2. Hygiene & Quality KPIs")
+        render_preflight_diagnostics(is_dry_run=config.get("dry_run", True))
 
-        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-        kpi1.metric("Total Records Ingested", results["stats"]["total_rows"])
-        kpi2.metric(
-            "Cleaned Leads (Ready)",
-            len(results["cleaned_df"]),
-            f"{stats['cleaned_pct']}%",
-        )
-        kpi3.metric(
-            "Flagged for Review",
-            len(results["review_df"]),
-            f"{stats['review_pct']}%",
-            delta_color="inverse",
-        )
-        kpi4.metric("Avg Quality Score", f"{stats['avg_quality_score']} / 100")
-
-        # Step 3: Tabbed Results Explorer
         st.markdown("---")
-        st.markdown("### 3. Pipeline Results Explorer")
+        st.markdown("### 3. Hygiene & Quality KPIs")
+        render_modern_kpi_cards(results)
+
+        # Step 4: Tabbed Results Explorer
+        st.markdown("---")
+        st.markdown("### 4. Pipeline Results Explorer")
 
         tab_cleaned, tab_review, tab_merges, tab_report = st.tabs(
             [
-                f"✅ Cleaned Leads ({len(results['cleaned_df'])})",
-                f"⚠️ Review Queue ({len(results['review_df'])})",
-                f"👥 Duplicate Clusters ({len(results['proposals_df'])})",
-                "📊 Audit & Executive Report",
+                f"🟢 Ready for CRM Sync ({len(results['cleaned_df'])})",
+                f"🟡 Review Needed ({len(results['review_df'])})",
+                f"🔴 Duplicate Clusters ({len(results['proposals_df'])})",
+                "📊 Executive Audit Report",
             ]
         )
 
