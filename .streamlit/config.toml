@@ -1,28 +1,28 @@
 [theme]
 base = "dark"
-primaryColor = "#FF6A00"
-backgroundColor = "#0B0E14"
-secondaryBackgroundColor = "#12161F"
-textColor = "#E6EDF3"
-borderColor = "#212836"
+primaryColor = "#5E6AD2"
+backgroundColor = "#0E121B"
+secondaryBackgroundColor = "#141824"
+textColor = "#F1F5F9"
+borderColor = "#222938"
 showWidgetBorder = true
 showSidebarBorder = true
-baseRadius = "12px"
-buttonRadius = "9999px"
+baseRadius = "8px"
+buttonRadius = "6px"
 
 font = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
-headingFontSizes = ["30px", "24px", "20px", "16px", "14px", "12px"]
+headingFontSizes = ["28px", "22px", "18px", "15px", "13px", "12px"]
 headingFontWeights = [700, 600, 600, 600, 500, 500]
 linkUnderline = false
 
-chartCategoricalColors = ["#FF6A00", "#FF8800", "#00A389", "#2563EB", "#7C3AED", "#FF4D4D", "#94A3B8"]
+chartCategoricalColors = ["#5E6AD2", "#10B981", "#3B82F6", "#F59E0B", "#EC4899", "#8B5CF6", "#64748B"]
 
 [theme.sidebar]
-backgroundColor = "#0B0E14"
-secondaryBackgroundColor = "#12161F"
-textColor = "#E6EDF3"
-borderColor = "#212836"
-primaryColor = "#FF6A00"
+backgroundColor = "#0A0D14"
+secondaryBackgroundColor = "#141824"
+textColor = "#F1F5F9"
+borderColor = "#222938"
+primaryColor = "#5E6AD2"
 
 [server]
 headless = true

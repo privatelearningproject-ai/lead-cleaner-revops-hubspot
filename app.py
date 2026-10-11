@@ -1,12 +1,12 @@
-"""Streamlit Web Application for RevOpsBolt Lead Hygiene & HubSpot Pipeline.
+"""Streamlit Web Application for Lead Cleaner & RevOps Pipeline.
 
-RevOpsBolt Obsidian & Neon Orange Design System:
-- Dark obsidian base (#0B0E14) for body and sidebar
-- Dark gray container surfaces (#12161F) and subtle borders (#212836)
-- Electric orange gradient accents (linear-gradient(135deg, #FF6A00, #FF8800))
-- Monospace subheadings and diagnostic tags (// DIAGNOSTIC SUITE 02 - LEAD ENGINE)
-- High-contrast KPI metric cards with colored rating numbers (Green #00A389, Orange #FF8800, Red #FF4D4D)
-- Glowing rounded orange pill buttons and status pills ("PORTAL CONNECTED", "DRY-RUN ACTIVE", "FREEMIUM QUOTA")
+Modern Linear / Vercel Dark Mode:
+- Deep charcoal slate canvas (#0E121B) and elevated surfaces (#141824)
+- Hairline subtle borders (#222938 / rgba(255, 255, 255, 0.08))
+- Linear indigo primary accent (#5E6AD2) with crisp typography
+- Sleek, refined rectangular buttons (radius: 6px) with zero neon glow
+- Minimalist status chips (Portal Connected, Dry-Run Active, Freemium Quota)
+- Non-destructive safety default (dry_run=True) and SQLite audit tracking
 """
 
 from __future__ import annotations
@@ -40,8 +40,8 @@ from hubspot.connection import validate_and_connect
 
 # Page Configuration
 st.set_page_config(
-    page_title="RevOpsBolt | Lead Hygiene & CRM Pipeline",
-    page_icon="⚡",
+    page_title="Lead Cleaner & RevOps Pipeline",
+    page_icon="✨",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -70,11 +70,11 @@ def init_session_state() -> None:
 
 
 def inject_custom_css() -> None:
-    """Inject RevOpsBolt Obsidian & Neon Orange Design System CSS."""
+    """Inject Modern Linear / Vercel Dark Mode styling."""
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
         /* Hide standard Streamlit header and footer chrome */
         header[data-testid="stHeader"] {
@@ -91,367 +91,310 @@ def inject_custom_css() -> None:
         }
 
         :root {
-            --bolt-obsidian: #0B0E14;
-            --bolt-surface: #12161F;
-            --bolt-surface-hover: #171C27;
-            --bolt-border: #212836;
-            --bolt-border-light: #2A3447;
-            --bolt-neon-orange: #FF6A00;
-            --bolt-electric-orange: #FF8800;
-            --bolt-green: #00A389;
-            --bolt-red: #FF4D4D;
-            --bolt-text-primary: #E6EDF3;
-            --bolt-text-secondary: #94A3B8;
-            --bolt-text-muted: #64748B;
+            --bg-canvas: #0E121B;
+            --bg-sidebar: #0A0D14;
+            --bg-surface: #141824;
+            --bg-surface-elevated: #181D2A;
+            --border-subtle: #222938;
+            --border-strong: #2D3748;
+            --accent-primary: #5E6AD2;
+            --accent-primary-hover: #6E7BE2;
+            --accent-green: #10B981;
+            --accent-amber: #F59E0B;
+            --accent-red: #EF4444;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
         }
 
-        /* Dark Obsidian Base */
+        /* Deep Charcoal Slate Canvas */
         .stApp {
-            background-color: var(--bolt-obsidian) !important;
-            color: var(--bolt-text-primary) !important;
-            font-family: 'Inter', -apple-system, sans-serif !important;
+            background-color: var(--bg-canvas) !important;
+            color: var(--text-primary) !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
         }
 
         /* Sidebar Styling */
         section[data-testid="stSidebar"] {
-            background-color: var(--bolt-obsidian) !important;
-            border-right: 1px solid var(--bolt-border) !important;
+            background-color: var(--bg-sidebar) !important;
+            border-right: 1px solid var(--border-subtle) !important;
         }
         section[data-testid="stSidebar"] > div {
-            background-color: var(--bolt-obsidian) !important;
+            background-color: var(--bg-sidebar) !important;
         }
-        section[data-testid="stSidebar"] .stMarkdown h3, 
+        section[data-testid="stSidebar"] .stMarkdown h3 {
+            color: var(--text-primary) !important;
+            font-size: 0.95rem !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.02em !important;
+        }
         section[data-testid="stSidebar"] .stMarkdown h4 {
-            color: #FFFFFF !important;
-            font-family: 'JetBrains Mono', monospace !important;
-            letter-spacing: 0.04em !important;
+            color: var(--text-secondary) !important;
+            font-size: 0.8rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            margin-top: 14px !important;
         }
 
-        /* RevOpsBolt Top Header */
-        .bolt-header-card {
-            background: var(--bolt-surface);
-            border: 1px solid var(--bolt-border);
-            border-radius: 14px;
-            padding: 22px 28px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-            position: relative;
-            overflow: hidden;
+        /* Linear Top Header Card */
+        .linear-header-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-bottom: 22px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
         }
-        .bolt-header-card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #FF6A00, #FF8800, #00A389, transparent);
-        }
-        .bolt-diagnostic-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            color: var(--bolt-electric-orange);
-            text-transform: uppercase;
-            margin-bottom: 6px;
+        .linear-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            background: rgba(94, 106, 210, 0.12);
+            border: 1px solid rgba(94, 106, 210, 0.25);
+            color: #A5B4FC;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            margin-bottom: 8px;
         }
-        .bolt-title {
+        .linear-title {
             color: #FFFFFF;
-            font-size: 1.8rem;
-            font-weight: 800;
+            font-size: 1.6rem;
+            font-weight: 700;
             letter-spacing: -0.02em;
-            margin: 0 0 6px 0;
-            line-height: 1.2;
+            margin: 0 0 4px 0;
+            line-height: 1.25;
         }
-        .bolt-subtext {
-            color: var(--bolt-text-secondary);
-            font-size: 0.88rem;
-            font-family: 'JetBrains Mono', monospace;
+        .linear-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.86rem;
             margin: 0;
             line-height: 1.4;
         }
 
-        /* Pill Status Badges ("PORTAL CONNECTED", "DRY-RUN ACTIVE", "FREEMIUM QUOTA") */
-        .bolt-pill-badge {
+        /* Subtle Status Chips */
+        .linear-chip {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.74rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            padding: 6px 14px;
-            border-radius: 9999px;
-            text-transform: uppercase;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 500;
             white-space: nowrap;
         }
-        .bolt-pill-connected {
-            background: rgba(0, 163, 137, 0.12);
-            border: 1px solid rgba(0, 163, 137, 0.45);
-            color: var(--bolt-green);
-            box-shadow: 0 0 12px rgba(0, 163, 137, 0.2);
+        .linear-chip-green {
+            background: rgba(16, 185, 129, 0.08);
+            border-color: rgba(16, 185, 129, 0.25);
+            color: #34D399;
         }
-        .bolt-pill-disconnected {
-            background: rgba(148, 163, 184, 0.08);
-            border: 1px solid var(--bolt-border);
-            color: var(--bolt-text-secondary);
+        .linear-chip-amber {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: rgba(245, 158, 11, 0.25);
+            color: #FBBF24;
         }
-        .bolt-pill-dryrun {
-            background: rgba(255, 136, 0, 0.12);
-            border: 1px solid rgba(255, 136, 0, 0.45);
-            color: var(--bolt-electric-orange);
-            box-shadow: 0 0 12px rgba(255, 136, 0, 0.2);
+        .linear-chip-indigo {
+            background: rgba(94, 106, 210, 0.1);
+            border-color: rgba(94, 106, 210, 0.25);
+            color: #A5B4FC;
         }
-        .bolt-pill-live {
-            background: rgba(255, 77, 77, 0.12);
-            border: 1px solid rgba(255, 77, 77, 0.45);
-            color: var(--bolt-red);
-            box-shadow: 0 0 12px rgba(255, 77, 77, 0.25);
-        }
-        .bolt-pill-quota {
-            background: rgba(255, 106, 0, 0.12);
-            border: 1px solid rgba(255, 106, 0, 0.45);
-            color: var(--bolt-neon-orange);
-            box-shadow: 0 0 12px rgba(255, 106, 0, 0.2);
-        }
-        .bolt-pulse-dot {
-            width: 7px;
-            height: 7px;
+        .linear-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             display: inline-block;
         }
-        .bolt-dot-green { background: #00A389; box-shadow: 0 0 8px #00A389; }
-        .bolt-dot-orange { background: #FF8800; box-shadow: 0 0 8px #FF8800; }
-        .bolt-dot-red { background: #FF4D4D; box-shadow: 0 0 8px #FF4D4D; }
-        .bolt-dot-neon { background: #FF6A00; box-shadow: 0 0 8px #FF6A00; }
-        .bolt-dot-gray { background: #64748B; }
+        .linear-dot-green { background: #10B981; }
+        .linear-dot-amber { background: #F59E0B; }
+        .linear-dot-indigo { background: #5E6AD2; }
+        .linear-dot-gray { background: #64748B; }
 
-        /* High-Contrast KPI Metric Cards */
-        .bolt-kpi-card {
-            background: var(--bolt-surface);
-            border: 1px solid var(--bolt-border);
-            border-radius: 12px;
-            padding: 18px 22px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
+        /* Modern Linear Metric Cards */
+        .linear-metric-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 16px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+            transition: border-color 0.15s ease;
         }
-        .bolt-kpi-card:hover {
-            border-color: var(--bolt-border-light);
-            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
-            transform: translateY(-1px);
+        .linear-metric-card:hover {
+            border-color: var(--border-strong);
         }
-        .bolt-kpi-title {
-            color: var(--bolt-text-secondary);
+        .linear-metric-title {
+            color: var(--text-secondary);
             font-size: 0.74rem;
-            font-weight: 700;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-family: 'JetBrains Mono', monospace;
-            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
         }
-        .bolt-kpi-val {
-            font-size: 2.1rem;
-            font-weight: 800;
-            line-height: 1.1;
-            font-family: 'Inter', sans-serif;
+        .linear-metric-val {
+            font-size: 1.85rem;
+            font-weight: 700;
+            line-height: 1.15;
+            color: #FFFFFF;
         }
-        .bolt-kpi-desc {
-            color: var(--bolt-text-muted);
+        .linear-metric-desc {
+            color: var(--text-muted);
             font-size: 0.74rem;
-            font-family: 'JetBrains Mono', monospace;
-            margin-top: 6px;
+            margin-top: 4px;
         }
 
-        /* Restyle st.metric to dark obsidian cards */
+        /* Restyle st.metric */
         div[data-testid="stMetric"] {
-            background-color: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            border-radius: 12px !important;
-            padding: 18px 20px !important;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+            background-color: var(--bg-surface) !important;
+            border: 1px solid var(--border-subtle) !important;
+            border-radius: 8px !important;
+            padding: 16px 18px !important;
         }
         div[data-testid="stMetricLabel"] {
-            color: var(--bolt-text-secondary) !important;
+            color: var(--text-secondary) !important;
             font-size: 0.74rem !important;
-            font-weight: 700 !important;
+            font-weight: 600 !important;
             text-transform: uppercase !important;
-            letter-spacing: 0.08em !important;
-            font-family: 'JetBrains Mono', monospace !important;
+            letter-spacing: 0.05em !important;
         }
         div[data-testid="stMetricValue"] {
-            color: var(--bolt-text-primary) !important;
-            font-size: 1.95rem !important;
-            font-weight: 800 !important;
+            color: #FFFFFF !important;
+            font-size: 1.85rem !important;
+            font-weight: 700 !important;
         }
 
-        /* Glowing Rounded Orange Pill Buttons */
+        /* Sleek Linear Rectangular Buttons (Radius 6px) */
         button[kind="primary"], div.stButton > button[kind="primary"] {
-            background: linear-gradient(135deg, #FF6A00, #FF8800) !important;
-            border: none !important;
+            background: var(--accent-primary) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
             color: #FFFFFF !important;
-            font-weight: 700 !important;
-            font-family: 'JetBrains Mono', monospace !important;
-            font-size: 0.85rem !important;
-            letter-spacing: 0.04em !important;
-            border-radius: 9999px !important;
-            padding: 9px 24px !important;
-            box-shadow: 0 0 18px rgba(255, 106, 0, 0.42) !important;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            text-transform: uppercase !important;
+            font-weight: 600 !important;
+            font-size: 0.84rem !important;
+            border-radius: 6px !important;
+            padding: 7px 18px !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+            transition: all 0.15s ease !important;
         }
         button[kind="primary"]:hover, div.stButton > button[kind="primary"]:hover {
-            background: linear-gradient(135deg, #FF7700, #FF9900) !important;
-            box-shadow: 0 0 28px rgba(255, 136, 0, 0.75) !important;
-            transform: translateY(-1px) scale(1.01) !important;
-        }
-        button[kind="primary"]:active, div.stButton > button[kind="primary"]:active {
-            transform: translateY(0) scale(0.99) !important;
+            background: var(--accent-primary-hover) !important;
+            box-shadow: 0 2px 8px rgba(94, 106, 210, 0.35) !important;
         }
 
-        /* Secondary Pill Buttons */
         button[kind="secondary"], div.stButton > button[kind="secondary"] {
-            background: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            color: var(--bolt-text-primary) !important;
-            font-weight: 600 !important;
-            font-family: 'JetBrains Mono', monospace !important;
+            background: var(--bg-surface-elevated) !important;
+            border: 1px solid var(--border-subtle) !important;
+            color: var(--text-primary) !important;
+            font-weight: 500 !important;
             font-size: 0.82rem !important;
-            letter-spacing: 0.03em !important;
-            border-radius: 9999px !important;
-            padding: 8px 20px !important;
-            transition: all 0.2s ease !important;
+            border-radius: 6px !important;
+            padding: 7px 16px !important;
+            transition: all 0.15s ease !important;
         }
         button[kind="secondary"]:hover, div.stButton > button[kind="secondary"]:hover {
-            border-color: var(--bolt-electric-orange) !important;
-            color: var(--bolt-electric-orange) !important;
-            box-shadow: 0 0 14px rgba(255, 136, 0, 0.3) !important;
-            background: var(--bolt-surface-hover) !important;
+            border-color: var(--border-strong) !important;
+            background: #202738 !important;
+            color: #FFFFFF !important;
         }
 
-        /* Download Buttons */
         div.stDownloadButton > button {
-            background: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            color: var(--bolt-text-primary) !important;
-            font-weight: 600 !important;
-            font-family: 'JetBrains Mono', monospace !important;
+            background: var(--bg-surface-elevated) !important;
+            border: 1px solid var(--border-subtle) !important;
+            color: var(--text-primary) !important;
+            font-weight: 500 !important;
             font-size: 0.82rem !important;
-            letter-spacing: 0.03em !important;
-            border-radius: 9999px !important;
-            padding: 8px 20px !important;
-            transition: all 0.2s ease !important;
+            border-radius: 6px !important;
+            padding: 7px 16px !important;
+            transition: all 0.15s ease !important;
         }
         div.stDownloadButton > button:hover {
-            border-color: var(--bolt-green) !important;
-            color: var(--bolt-green) !important;
-            box-shadow: 0 0 14px rgba(0, 163, 137, 0.35) !important;
-            background: var(--bolt-surface-hover) !important;
+            border-color: var(--accent-primary) !important;
+            color: #FFFFFF !important;
         }
 
-        /* Restyle st.tabs */
+        /* Clean Linear Tabs */
         div[data-testid="stTabs"] {
-            border-bottom: 1px solid var(--bolt-border) !important;
-            margin-bottom: 20px !important;
+            border-bottom: 1px solid var(--border-subtle) !important;
+            margin-bottom: 18px !important;
         }
         div[data-testid="stTabs"] button {
-            color: var(--bolt-text-secondary) !important;
-            font-size: 0.88rem !important;
-            font-weight: 600 !important;
-            font-family: 'JetBrains Mono', monospace !important;
-            padding: 12px 22px !important;
+            color: var(--text-secondary) !important;
+            font-size: 0.86rem !important;
+            font-weight: 500 !important;
+            padding: 10px 18px !important;
             border-bottom: 2px solid transparent !important;
             transition: all 0.15s ease !important;
-            letter-spacing: 0.03em !important;
         }
         div[data-testid="stTabs"] button[aria-selected="true"] {
-            color: var(--bolt-electric-orange) !important;
-            border-bottom: 2px solid var(--bolt-neon-orange) !important;
-            background: rgba(255, 106, 0, 0.08) !important;
-            border-radius: 8px 8px 0 0 !important;
+            color: #FFFFFF !important;
+            border-bottom: 2px solid var(--accent-primary) !important;
+            background: rgba(94, 106, 210, 0.05) !important;
         }
         div[data-testid="stTabs"] button:hover {
             color: #FFFFFF !important;
         }
 
-        /* Restyle st.dataframe to match dark obsidian */
+        /* Dataframe & Tables */
         div[data-testid="stDataFrame"] {
-            background-color: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            border-radius: 10px !important;
-            padding: 4px !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+            background-color: var(--bg-surface) !important;
+            border: 1px solid var(--border-subtle) !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
         }
 
-        /* Neon Orange Progress Bar */
+        /* Progress Bar */
         div[data-testid="stProgress"] > div > div > div {
-            background: linear-gradient(90deg, #FF6A00, #FF8800) !important;
-            box-shadow: 0 0 12px rgba(255, 106, 0, 0.6) !important;
+            background: var(--accent-primary) !important;
         }
         div[data-testid="stProgress"] > div > div {
             background-color: #1A2130 !important;
-            border-radius: 9999px !important;
+            border-radius: 4px !important;
         }
 
         /* Inputs & Form Controls */
         div[data-baseweb="input"], div[data-baseweb="base-input"] {
-            background-color: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            color: var(--bolt-text-primary) !important;
-            border-radius: 8px !important;
+            background-color: var(--bg-surface) !important;
+            border: 1px solid var(--border-subtle) !important;
+            color: var(--text-primary) !important;
+            border-radius: 6px !important;
         }
         div[data-baseweb="input"]:focus-within {
-            border-color: var(--bolt-electric-orange) !important;
-            box-shadow: 0 0 10px rgba(255, 136, 0, 0.3) !important;
+            border-color: var(--accent-primary) !important;
         }
         div[data-baseweb="select"] > div {
-            background-color: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            color: var(--bolt-text-primary) !important;
-            border-radius: 8px !important;
+            background-color: var(--bg-surface) !important;
+            border: 1px solid var(--border-subtle) !important;
+            color: var(--text-primary) !important;
+            border-radius: 6px !important;
         }
         div[data-testid="stSegmentedControl"] {
-            background-color: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            border-radius: 9999px !important;
-            padding: 4px !important;
+            background-color: var(--bg-surface) !important;
+            border: 1px solid var(--border-subtle) !important;
+            border-radius: 6px !important;
+            padding: 3px !important;
         }
         div[data-testid="stSegmentedControl"] button[data-checked="true"] {
-            background: linear-gradient(135deg, #FF6A00, #FF8800) !important;
+            background: var(--accent-primary) !important;
             color: #FFFFFF !important;
-            border-radius: 9999px !important;
-            box-shadow: 0 0 12px rgba(255, 106, 0, 0.4) !important;
+            border-radius: 4px !important;
         }
         div[data-testid="stExpander"] {
-            background-color: var(--bolt-surface) !important;
-            border: 1px solid var(--bolt-border) !important;
-            border-radius: 12px !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+            background-color: var(--bg-surface) !important;
+            border: 1px solid var(--border-subtle) !important;
+            border-radius: 8px !important;
         }
 
-        /* Quota Box */
-        .bolt-quota-box {
-            background: var(--bolt-surface);
-            border: 1px solid var(--bolt-border);
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-top: 10px;
-            margin-bottom: 12px;
-        }
-
-        /* Inspection Card */
-        .bolt-flyout-card {
-            background: var(--bolt-surface);
-            border: 1px solid var(--bolt-border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 14px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+        /* Sidebar Quota Box */
+        .linear-quota-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 12px 14px;
+            margin-top: 8px;
+            margin-bottom: 10px;
         }
         </style>
         """,
@@ -461,9 +404,9 @@ def inject_custom_css() -> None:
 
 def render_sidebar() -> Dict[str, Any]:
     """Render sidebar configuration controls, HubSpot connection, and quota viewer."""
-    st.sidebar.markdown("### // CONFIGURATION ENGINE")
+    st.sidebar.markdown("### Settings & Preferences")
 
-    st.sidebar.markdown("#### // MATCHING & QUALITY CUTOFFS")
+    st.sidebar.markdown("#### Matching & Quality Cutoffs")
     fuzzy_thresh = st.sidebar.slider(
         "Fuzzy Name Match Threshold",
         min_value=75,
@@ -483,7 +426,7 @@ def render_sidebar() -> Dict[str, Any]:
     )
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("#### // CRM SAFETY MODE")
+    st.sidebar.markdown("#### CRM Safety Mode")
     dry_run = st.sidebar.checkbox(
         "Enable Dry-Run Safety Mode",
         value=True,
@@ -491,12 +434,12 @@ def render_sidebar() -> Dict[str, Any]:
     )
 
     if dry_run:
-        st.sidebar.caption("🟢 **DRY-RUN ACTIVE (Safe Non-Destructive Simulation)**")
+        st.sidebar.caption("🟢 **Dry-Run Active (Simulation Mode)**")
     else:
-        st.sidebar.warning("⚠️ **LIVE SYNC ACTIVE (CRM Mutations Enabled)**")
+        st.sidebar.warning("⚠️ **Live Mode Active (Real CRM Mutations)**")
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("#### // HUBSPOT AUTHENTICATION")
+    st.sidebar.markdown("#### HubSpot Authentication")
     env_token = get_token_from_env()
     stored_token = st.session_state.get("hubspot_token")
     token_display = stored_token if stored_token is not None else (env_token or "")
@@ -514,7 +457,7 @@ def render_sidebar() -> Dict[str, Any]:
     col_conn_btn, col_conn_status = st.sidebar.columns([1, 1])
     if not is_connected:
         with col_conn_btn:
-            if st.button("🔗 Connect", type="primary", use_container_width=True, key="hs_connect_btn"):
+            if st.button("Connect", type="primary", use_container_width=True, key="hs_connect_btn"):
                 if not token_input.strip():
                     st.sidebar.error("Please enter a token first.")
                 else:
@@ -528,15 +471,15 @@ def render_sidebar() -> Dict[str, Any]:
                         else:
                             st.sidebar.error(f"❌ {err_msg}")
         with col_conn_status:
-            st.sidebar.caption("⚪ **Not connected**")
+            st.sidebar.caption("Not connected")
     else:
         with col_conn_btn:
-            if st.button("🔌 Disconnect", type="secondary", use_container_width=True, key="hs_disconnect_btn"):
+            if st.button("Disconnect", type="secondary", use_container_width=True, key="hs_disconnect_btn"):
                 st.session_state.hubspot_connected = False
                 st.session_state.hubspot_portal_id = None
                 st.session_state.hubspot_token = ""
                 st.rerun()
-        st.sidebar.markdown(f":green[**Connected: {active_portal}**]")
+        st.sidebar.markdown(f":green[Connected: {active_portal}]")
 
     # Portal ID Resolution
     if is_connected and active_portal:
@@ -549,7 +492,7 @@ def render_sidebar() -> Dict[str, Any]:
         )
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("#### // FREEMIUM ENRICHMENT QUOTA")
+    st.sidebar.markdown("#### Freemium AI Enrichment Quota")
     quota = get_enrichment_quota(portal_id)
     used = quota["used"]
     limit = quota["limit"]
@@ -558,19 +501,19 @@ def render_sidebar() -> Dict[str, Any]:
 
     st.sidebar.markdown(
         f"""
-        <div class="bolt-quota-box">
+        <div class="linear-quota-box">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <span style="font-weight:700; font-size:0.8rem; color:#FFFFFF; font-family:'JetBrains Mono', monospace;">FREEMIUM QUOTA</span>
-                <span class="bolt-pill-badge bolt-pill-quota" style="font-size:0.7rem; padding:2px 8px;">{used}/{limit} USED</span>
+                <span style="font-weight:600; font-size:0.78rem; color:#FFFFFF;">Freemium Quota</span>
+                <span style="background:rgba(94,106,210,0.15); color:#A5B4FC; font-size:0.72rem; font-weight:600; padding:2px 8px; border-radius:4px;">{used}/{limit} Used</span>
             </div>
-            <div style="font-size:0.75rem; color:#94A3B8; font-family:'JetBrains Mono', monospace;">500 Free AI Enriched Leads</div>
+            <div style="font-size:0.75rem; color:#94A3B8;">500 Free AI Enriched Leads</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
     quota_pct = min(1.0, used / limit if limit > 0 else 1.0)
     st.sidebar.progress(quota_pct)
-    st.sidebar.caption(f"⚡ **{remaining}** free contacts remaining")
+    st.sidebar.caption(f"✨ **{remaining}** free contacts remaining")
 
     if is_exceeded:
         st.sidebar.error("Freemium quota reached (500/500). Upgrade plan to continue.")
@@ -583,11 +526,11 @@ def render_sidebar() -> Dict[str, Any]:
         )
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown("#### // PLATFORM DIAGNOSTICS")
-    if st.sidebar.button("📖 RevOps & Sync Matrix Guide"):
+    st.sidebar.markdown("#### Resources & Diagnostics")
+    if st.sidebar.button("Marketplace Guide & Sync Matrix"):
         st.session_state.show_marketplace_modal = True
 
-    if st.sidebar.button("📜 SQLite Execution History"):
+    if st.sidebar.button("SQLite Execution History"):
         st.session_state.show_db_modal = True
 
     ui_mode = st.sidebar.selectbox(
@@ -609,7 +552,7 @@ def render_sidebar() -> Dict[str, Any]:
 
 
 def render_header_and_tenant_bar(config: Dict[str, Any]) -> None:
-    """Render RevOpsBolt top header with monospace diagnostic tags and status pills."""
+    """Render sleek Linear-inspired top header with status chips."""
     portal_label = config.get("portal_id", "default_portal")
     is_dry_run = config.get("dry_run", True)
     is_connected = st.session_state.get("hubspot_connected", False)
@@ -617,28 +560,27 @@ def render_header_and_tenant_bar(config: Dict[str, Any]) -> None:
     used = quota["used"]
     limit = quota["limit"]
 
-    # Status Pill Badges
     if is_connected:
-        portal_badge = f'<span class="bolt-pill-badge bolt-pill-connected"><span class="bolt-pulse-dot bolt-dot-green"></span> PORTAL CONNECTED: {portal_label}</span>'
+        portal_badge = f'<span class="linear-chip linear-chip-green"><span class="linear-dot linear-dot-green"></span> Portal: <strong>{portal_label}</strong></span>'
     else:
-        portal_badge = f'<span class="bolt-pill-badge bolt-pill-disconnected"><span class="bolt-pulse-dot bolt-dot-gray"></span> PORTAL: {portal_label}</span>'
+        portal_badge = f'<span class="linear-chip"><span class="linear-dot linear-dot-gray"></span> Portal: {portal_label}</span>'
 
     if is_dry_run:
-        dry_badge = '<span class="bolt-pill-badge bolt-pill-dryrun"><span class="bolt-pulse-dot bolt-dot-orange"></span> DRY-RUN ACTIVE</span>'
+        dry_badge = '<span class="linear-chip linear-chip-amber"><span class="linear-dot linear-dot-amber"></span> Dry-Run Active</span>'
     else:
-        dry_badge = '<span class="bolt-pill-badge bolt-pill-live"><span class="bolt-pulse-dot bolt-dot-red"></span> LIVE SYNC ACTIVE</span>'
+        dry_badge = '<span class="linear-chip" style="color:#EF4444; border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.1);"><span class="linear-dot" style="background:#EF4444;"></span> Live Sync Active</span>'
 
-    quota_badge = f'<span class="bolt-pill-badge bolt-pill-quota"><span class="bolt-pulse-dot bolt-dot-neon"></span> FREEMIUM QUOTA: {used}/{limit} USED</span>'
+    quota_badge = f'<span class="linear-chip linear-chip-indigo"><span class="linear-dot linear-dot-indigo"></span> Quota: <strong>{used}/{limit} Used</strong></span>'
 
     st.markdown(
         f"""
-        <div class="bolt-header-card">
+        <div class="linear-header-card">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
                 <div>
-                    <div class="bolt-diagnostic-tag">// DIAGNOSTIC SUITE 02 - LEAD ENGINE</div>
-                    <h1 class="bolt-title">RevOpsBolt // Lead Hygiene & CRM Pipeline</h1>
-                    <p class="bolt-subtext">
-                        // REVOPS SYSTEM KERNEL v2.4 // INDIAN SME ENGINE (+91 E.164, PIN & GST VERIFICATION)
+                    <div class="linear-badge">HubSpot App Marketplace</div>
+                    <h1 class="linear-title">Lead Cleaner & RevOps Pipeline</h1>
+                    <p class="linear-subtitle">
+                        Indian mobile standardization (+91 E.164), PIN & GST cross-verification, and native duplicate consolidation for HubSpot CRM.
                     </p>
                 </div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
@@ -680,20 +622,20 @@ def render_audit_modal() -> None:
             st.rerun()
 
 
-@st.dialog("🏢 RevOpsBolt Data Sync & Architecture Guide", width="large")
+@st.dialog("🏢 HubSpot Integration & Sync Matrix Guide", width="large")
 def show_marketplace_guide_dialog() -> None:
     """Render comprehensive marketplace setup guide, shared data matrix, and security specs."""
     st.markdown(
         """
         <div style="margin-bottom:14px; display:flex; gap:8px; flex-wrap:wrap;">
-            <span class="bolt-pill-badge bolt-pill-quota">REVOPS ARCHITECTURE</span>
-            <span class="bolt-pill-badge bolt-pill-connected">NON-DESTRUCTIVE SYNC</span>
-            <span class="bolt-pill-badge bolt-pill-dryrun">v2.4 ENTERPRISE KERNEL</span>
+            <span class="linear-chip linear-chip-indigo">HubSpot Certified Standard</span>
+            <span class="linear-chip linear-chip-green">Non-Destructive Sync</span>
+            <span class="linear-chip">v2.4 Enterprise Edition</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    st.caption("// DIAGNOSTIC TELEMETRY: Enterprise RevOps data governance, E.164 standardization, and sub-10-minute time-to-value.")
+    st.caption("Enterprise data governance, Indian SME mobile format standardization, and rapid time-to-value.")
 
     guide_tab1, guide_tab2, guide_tab3, guide_tab4 = st.tabs(
         [
@@ -952,7 +894,7 @@ def _execute_hubspot_sync(
 def _render_ingestion_controls(config: Dict[str, Any]) -> None:
     """Render Dual-Mode Ingestion (Option A: Vendor Spreadsheets vs Option B: Direct CRM Sync)."""
     with st.container():
-        st.markdown("### // LEAD INGESTION SUBSYSTEM")
+        st.markdown("### Lead Ingestion Source")
         intake_mode = st.segmented_control(
             "Select Ingestion Pipeline:",
             options=["📂 Ingest Vendor Leads (CSV / Excel)", "🔄 Direct CRM Hygiene (Fetch from HubSpot)"],
@@ -1003,7 +945,7 @@ def _render_ingestion_controls(config: Dict[str, Any]) -> None:
 
         else:
             # Direct HubSpot CRM Sync Mode
-            st.info("🔗 **DIRECT CRM MODE:** Live stream contacts via API, apply E.164 normalization, PIN validation, GST checksums, and detect duplicate clusters.")
+            st.info("🔗 **Direct HubSpot CRM Mode:** Streams live contacts directly via API, applies +91 E.164 normalization, validates PIN codes and GSTIN checksums, and detects duplicate clusters.")
 
             col_h1, col_h2 = st.columns([3, 1])
             with col_h1:
@@ -1048,7 +990,7 @@ def _render_ingestion_controls(config: Dict[str, Any]) -> None:
 
 def render_contact_inspection_flyout(df: pd.DataFrame, config: Dict[str, Any]) -> None:
     """Render the HubSpot Contact Inspection Flyout Card (Raw vs Canonical, Link, & AI Intent)."""
-    with st.expander("🔍 // CONTACT INSPECTION TELEMETRY", expanded=False):
+    with st.expander("🔍 Contact Profile & Inspection Telemetry", expanded=False):
         if df.empty:
             st.info("No records to inspect.")
             return
@@ -1091,8 +1033,8 @@ def render_contact_inspection_flyout(df: pd.DataFrame, config: Dict[str, Any]) -
 
             # Quality Score
             score = rec.get("quality_score", 0)
-            score_color = "#00A389" if score >= 80 else ("#FF8800" if score >= 70 else "#FF4D4D")
-            st.markdown(f"**Hygiene Score:** <span style='color:{score_color}; font-weight:800; font-size:1.1rem;'>{score:.0f} / 100</span>", unsafe_allow_html=True)
+            score_color = "#10B981" if score >= 80 else ("#F59E0B" if score >= 70 else "#EF4444")
+            st.markdown(f"**Hygiene Score:** <span style='color:{score_color}; font-weight:700; font-size:1.1rem;'>{score:.0f} / 100</span>", unsafe_allow_html=True)
             issues = rec.get("issues", [])
             if issues:
                 st.caption(f"Issues: `{', '.join(issues) if isinstance(issues, list) else issues}`")
@@ -1153,7 +1095,7 @@ def render_leadfeeder_tabs(results: Dict[str, Any], config: Dict[str, Any]) -> N
         render_contact_inspection_flyout(cleaned_df, config)
 
     with tab_merges:
-        st.markdown("#### // DUPLICATE CLUSTERS & NATIVE MERGE CONSOLIDATION")
+        st.markdown("#### Duplicate Clusters & Native Consolidation")
         st.caption("Exact phone/email duplicates are consolidated automatically into the primary record with backfilled properties. Fuzzy name matches require confirmation.")
 
         if not proposals_df.empty:
@@ -1185,7 +1127,7 @@ def render_leadfeeder_tabs(results: Dict[str, Any], config: Dict[str, Any]) -> N
             st.success("🎉 Zero duplicate clusters found in this dataset!")
 
     with tab_review:
-        st.markdown("#### // FLAGGED RECORDS (REQUIRES REVIEW)")
+        st.markdown("#### Flagged Records (Requires Review)")
         st.caption("Leads routed here due to invalid mobile formats, unmapped cities, GST state code mismatches, or missing marketing consent.")
 
         col_r1, col_r2 = st.columns([3, 1])
@@ -1206,24 +1148,23 @@ def render_leadfeeder_tabs(results: Dict[str, Any], config: Dict[str, Any]) -> N
             st.success("🎉 Zero leads flagged for review! 100% passed hygiene.")
 
     with tab_audit:
-        st.markdown("#### // HYGIENE KPIS & EXECUTIVE SUMMARY")
+        st.markdown("#### Hygiene KPIs & Executive Summary")
         
         tot = stats["total_rows"]
         pass_pct = stats.get("cleaned_pct", 0.0)
         review_pct = stats.get("review_pct", 0.0)
         avg_score = stats.get("avg_quality_score", 0.0)
 
-        # High-Contrast KPI Metric Cards with colored rating numbers
-        score_color = "#00A389" if avg_score >= 80 else ("#FF8800" if avg_score >= 70 else "#FF4D4D")
+        score_color = "#10B981" if avg_score >= 80 else ("#F59E0B" if avg_score >= 70 else "#EF4444")
 
         c1, c2, c3, c4 = st.columns(4)
         with c1:
             st.markdown(
                 f"""
-                <div class="bolt-kpi-card">
-                    <div class="bolt-kpi-title">TOTAL PROCESSED</div>
-                    <div class="bolt-kpi-val" style="color:#E6EDF3;">{tot}</div>
-                    <div class="bolt-kpi-desc">Ingested lead records</div>
+                <div class="linear-metric-card">
+                    <div class="linear-metric-title">Total Processed</div>
+                    <div class="linear-metric-val">{tot}</div>
+                    <div class="linear-metric-desc">Ingested lead records</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1231,10 +1172,10 @@ def render_leadfeeder_tabs(results: Dict[str, Any], config: Dict[str, Any]) -> N
         with c2:
             st.markdown(
                 f"""
-                <div class="bolt-kpi-card">
-                    <div class="bolt-kpi-title">HYGIENE PASS RATE</div>
-                    <div class="bolt-kpi-val" style="color:#00A389;">{pass_pct}%</div>
-                    <div class="bolt-kpi-desc">{len(cleaned_df)} approved leads</div>
+                <div class="linear-metric-card">
+                    <div class="linear-metric-title">Hygiene Pass Rate</div>
+                    <div class="linear-metric-val" style="color:#10B981;">{pass_pct}%</div>
+                    <div class="linear-metric-desc">{len(cleaned_df)} approved leads</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1242,10 +1183,10 @@ def render_leadfeeder_tabs(results: Dict[str, Any], config: Dict[str, Any]) -> N
         with c3:
             st.markdown(
                 f"""
-                <div class="bolt-kpi-card">
-                    <div class="bolt-kpi-title">REVIEW RATE</div>
-                    <div class="bolt-kpi-val" style="color:#FF8800;">{review_pct}%</div>
-                    <div class="bolt-kpi-desc">{len(review_df)} flagged leads</div>
+                <div class="linear-metric-card">
+                    <div class="linear-metric-title">Review Rate</div>
+                    <div class="linear-metric-val" style="color:#F59E0B;">{review_pct}%</div>
+                    <div class="linear-metric-desc">{len(review_df)} flagged leads</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1253,10 +1194,10 @@ def render_leadfeeder_tabs(results: Dict[str, Any], config: Dict[str, Any]) -> N
         with c4:
             st.markdown(
                 f"""
-                <div class="bolt-kpi-card">
-                    <div class="bolt-kpi-title">AVG QUALITY SCORE</div>
-                    <div class="bolt-kpi-val" style="color:{score_color};">{avg_score:.1f}</div>
-                    <div class="bolt-kpi-desc">Out of 100 benchmark</div>
+                <div class="linear-metric-card">
+                    <div class="linear-metric-title">Avg Quality Score</div>
+                    <div class="linear-metric-val" style="color:{score_color};">{avg_score:.1f}</div>
+                    <div class="linear-metric-desc">Out of 100 benchmark</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
