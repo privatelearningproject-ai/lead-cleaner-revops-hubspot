@@ -78,6 +78,24 @@ def test_oauth_callback_success(mock_exchange, client):
     mock_exchange.assert_called_once_with("valid_hubspot_code")
 
 
+@patch("server.exchange_authorization_code")
+def test_oauth_callback_with_return_url(mock_exchange, client):
+    """Verify /oauth/callback redirects to returnUrl for HubSpot Seamless Install."""
+    mock_exchange.return_value = {
+        "portal_id": "9876543",
+        "access_token": "token_abc_123",
+        "refresh_token": "refresh_xyz_456",
+        "expires_in": 21600,
+    }
+
+    response = client.get(
+        "/oauth/callback?code=valid_hubspot_code&returnUrl=https://app.hubspot.com/install-success&step=finalize",
+        follow_redirects=False,
+    )
+    assert response.status_code == 302
+    assert response.headers.get("location") == "https://app.hubspot.com/install-success"
+
+
 def test_portal_quota_api_endpoint(client, tmp_path, monkeypatch):
     """Verify /api/portal/{portal_id}/quota returns accurate quota and registration status."""
     db_path = tmp_path / "test_api_quota.db"

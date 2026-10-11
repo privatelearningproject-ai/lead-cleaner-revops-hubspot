@@ -1272,6 +1272,7 @@ def main() -> None:
     # Handle incoming HubSpot OAuth redirect callback
     if "code" in st.query_params:
         auth_code = str(st.query_params.get("code") or "")
+        return_url = st.query_params.get("returnUrl")
         if auth_code:
             with st.spinner("Authorizing and connecting with HubSpot..."):
                 r_uri = os.environ.get("HUBSPOT_REDIRECT_URI") or "http://localhost:8501"
@@ -1285,6 +1286,8 @@ def main() -> None:
                     st.session_state.hubspot_token = details.get("access_token")
                     st.session_state.hubspot_domain = details.get("hubDomain")
                     st.session_state.hubspot_user = details.get("user")
+                    if return_url:
+                        st.session_state.hubspot_return_url = return_url
                     st.query_params.clear()
                     st.toast(f"✅ Connected to HubSpot Portal {st.session_state.hubspot_portal_id}!")
                     st.rerun()

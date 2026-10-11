@@ -72,13 +72,15 @@ def oauth_install(
     return RedirectResponse(url=url, status_code=302)
 
 
-@app.get("/oauth/callback", response_class=HTMLResponse)
+@app.get("/oauth/callback")
 def oauth_callback(
     code: Optional[str] = Query(None),
     state: Optional[str] = Query(None),
+    return_url: Optional[str] = Query(None, alias="returnUrl"),
+    step: Optional[str] = Query(None),
     error: Optional[str] = Query(None),
     error_description: Optional[str] = Query(None),
-) -> HTMLResponse:
+) -> Any:
     """Handles the OAuth callback from HubSpot after the user grants permissions."""
     if error:
         detail = error_description or error
@@ -109,6 +111,10 @@ def oauth_callback(
         raise HTTPException(status_code=400, detail=f"HubSpot OAuth error: {he}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal token exchange error: {e}")
+
+    # If returnUrl was provided by HubSpot (Seamless Install flow), redirect back to HubSpot
+    if return_url:
+        return RedirectResponse(url=return_url, status_code=302)
 
     # Return clean, user-friendly confirmation HTML page
     html_content = f"""
