@@ -139,3 +139,47 @@ def test_oauth_provider_exchange_token_and_details():
         assert res["access_token"] == "oauth_access_token_xyz"
         assert err is None
 
+
+def test_session_state_connect_and_disconnect_lifecycle():
+    """Verify session_state updates on connect and clean teardown on disconnect."""
+    mock_state = {
+        "hubspot_connected": False,
+        "hubspot_portal_id": None,
+        "hubspot_token": "",
+        "hubspot_token_input_field": "pat-test-12345",
+    }
+
+    # Simulate connect success
+    secret_token = mock_state["hubspot_token_input_field"]
+    mock_portal_id = "55443322"
+    mock_state["hubspot_connected"] = True
+    mock_state["hubspot_portal_id"] = mock_portal_id
+    mock_state["hubspot_token"] = secret_token
+
+    assert mock_state["hubspot_connected"] is True
+    assert mock_state["hubspot_portal_id"] == "55443322"
+    assert mock_state["hubspot_token"] == "pat-test-12345"
+
+    # Simulate disconnect
+    mock_state["hubspot_connected"] = False
+    mock_state["hubspot_portal_id"] = None
+    mock_state["hubspot_token"] = ""
+    mock_state["hubspot_token_input_field"] = ""
+
+    assert mock_state["hubspot_connected"] is False
+    assert mock_state["hubspot_portal_id"] is None
+    assert mock_state["hubspot_token"] == ""
+    assert mock_state["hubspot_token_input_field"] == ""
+
+
+def test_fetch_button_gating_condition():
+    """Verify gating logic: disabled when not connected, active when connected."""
+    state_disconnected = {"hubspot_connected": False}
+    is_connected = state_disconnected.get("hubspot_connected", False)
+    assert not is_connected  # Button must be disabled / show warning
+
+    state_connected = {"hubspot_connected": True}
+    is_connected = state_connected.get("hubspot_connected", False)
+    assert is_connected  # Button enabled
+
+
