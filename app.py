@@ -36,6 +36,7 @@ from cleaner.hubspot import ConfigurationError, HubSpotClient, get_token_from_en
 from cleaner.loader import load_and_map
 from cleaner.report import generate_markdown_report, generate_summary_stats
 from cleaner.validate import FATAL_ISSUES, validate_dataframe
+from components.mixed_dashboard import render_mixed_dashboard
 
 # Page Configuration
 st.set_page_config(
@@ -148,6 +149,14 @@ def render_sidebar() -> Dict[str, Any]:
                 st.sidebar.warning("⚠️ GEMINI_API_KEY not found in .env. Enrichment calls may fail.")
 
     st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🖥️ Dashboard Layout")
+    ui_mode = st.sidebar.selectbox(
+        "UI Mode",
+        options=["classic", "mixed"],
+        index=0,
+        help="Switch between Classic Tabbed explorer and the new high-density Mixed layout.",
+    )
+
     st.sidebar.markdown("### SQLite Audit Trail")
     if st.sidebar.button("Inspect Previous Runs"):
         st.session_state.show_db_modal = True
@@ -159,6 +168,7 @@ def render_sidebar() -> Dict[str, Any]:
         "token": token_input,
         "portal_id": portal_id,
         "enrich": enrich_enabled,
+        "ui_mode": ui_mode,
     }
 
 
@@ -311,21 +321,31 @@ def to_csv_bytes(df: pd.DataFrame) -> bytes:
     return export_df.to_csv(index=False).encode("utf-8")
 
 
-def main() -> None:
-    init_session_state()
+def _render_crm_push_controls(results: Dict[str, Any], config: Dict[str, Any]) -> None:
+    """Render HubSpot CRM Push section with dry-run simulation or live confirmation."""
+    st.markdown("### HubSpot CRM Push")
 
-    # Title & Subtitle
-    st.title("🧹 Lead Cleaner for Small Businesses (India)")
-    st.markdown(
-        "Private RevOps lead hygiene and HubSpot ingestion pipeline. "
-        "Standardizes **Indian mobile formats (+91)**, verifies **PIN code prefixes**, checks **GSTIN state alignment**, "
-        "detects **fuzzy duplicates**, and syncs clean contacts non-destructively."
-    )
+    cleaned_count = len(results["cleaned_df"])
+    if cleaned_count == 0:
+        st.info("No cleaned leads available to push.")
+        return
 
-    config = render_sidebar()
-    render_audit_modal()
+    is_dry_run = config["dry_run"]
 
-    # Step 1: Ingestion Mode Selector (File Upload vs Direct HubSpot CRM Sync)
+    if is_dry_run:
+        st.info("ℹ️ **Dry-Run Mode Enabled:** Pushing will simulate search, contact creation, and non-destructive updates without making live changes in HubSpot.")
+        if st.button(f"🧪 Test Push ({cleaned_count} Leads - Dry-Run Simulation)", type="primary", key="push_dry_run_btn"):
+            _execute_hubspot_sync(results["cleaned_df"], config, is_dry_run=True)
+    else:
+        st.error("🚨 **Live Mode Active:** Proceeding will create or patch actual contact records in your HubSpot CRM account.")
+        confirm_live = st.checkbox("I understand and confirm that I want to execute real mutations in HubSpot CRM.", key="confirm_live_push")
+        if confirm_live:
+            if st.button(f"🚀 Push {cleaned_count} Leads to HubSpot (Live)", type="primary", key="push_live_btn"):
+                _execute_hubspot_sync(results["cleaned_df"], config, is_dry_run=False)
+
+
+def _render_ingestion_controls(config: Dict[str, Any]) -> None:
+    """Render data ingestion controls (file upload or live HubSpot fetch)."""
     st.markdown("### 1. Ingest Leads")
     intake_mode = st.radio(
         "Select Data Ingestion Source:",
@@ -416,6 +436,40 @@ def main() -> None:
                         st.rerun()
                 except Exception as e:
                     st.error(f"❌ Failed to fetch from HubSpot CRM: {e}")
+
+
+def main() -> None:
+    init_session_state()
+
+    config = render_sidebar()
+    render_audit_modal()
+
+    ui_mode = config.get("ui_mode", "classic")
+
+    if ui_mode == "mixed":
+        render_mixed_dashboard(
+            results=st.session_state.pipeline_results,
+            config=config,
+            run_pipeline_fn=run_in_memory_pipeline,
+        )
+
+        st.markdown("---")
+        with st.expander("📥 Ingest Leads & CRM Sync Options", expanded=(st.session_state.pipeline_results is None)):
+            _render_ingestion_controls(config)
+            if st.session_state.pipeline_results is not None:
+                st.markdown("---")
+                _render_crm_push_controls(st.session_state.pipeline_results, config)
+        return
+
+    # Classic Layout
+    st.title("🧹 Lead Cleaner for Small Businesses (India)")
+    st.markdown(
+        "Private RevOps lead hygiene and HubSpot ingestion pipeline. "
+        "Standardizes **Indian mobile formats (+91)**, verifies **PIN code prefixes**, checks **GSTIN state alignment**, "
+        "detects **fuzzy duplicates**, and syncs clean contacts non-destructively."
+    )
+
+    _render_ingestion_controls(config)
 
     # Step 2: Processing & Metrics Display
     results = st.session_state.pipeline_results

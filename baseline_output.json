@@ -1,0 +1,11 @@
+{
+  "fixture": "tests/fixtures/test_500_leads.csv",
+  "total_rows_raw": 470,
+  "total_rows_deduped": 451,
+  "cleaned_rows": 312,
+  "flagged_review_rows": 139,
+  "duplicate_clusters": 37,
+  "avg_quality_score": 96.5,
+  "cleaned_pct": 69.2,
+  "review_pct": 30.8
+}
