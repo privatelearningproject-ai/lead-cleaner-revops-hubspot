@@ -450,93 +450,55 @@ def render_sidebar() -> Dict[str, Any]:
     st.sidebar.markdown("#### HubSpot Authentication")
     is_connected = st.session_state.get("hubspot_connected", False)
     active_portal = st.session_state.get("hubspot_portal_id")
-    active_domain = st.session_state.get("hubspot_domain")
 
-    if is_connected:
-        st.sidebar.markdown(f":green[**Connected: {active_portal}**]" + (f" ({active_domain})" if active_domain else ""))
+    env_token = get_token_from_env()
+    if "hubspot_token_input_field" not in st.session_state:
+        st.session_state.hubspot_token_input_field = st.session_state.get("hubspot_token") or env_token or ""
+
+    token_input = st.sidebar.text_input(
+        "HubSpot Private App Token",
+        type="password",
+        key="hubspot_token_input_field",
+        help="HubSpot Private App Token (starts with pat-). Defaults to .env if configured.",
+    )
+
+    if not is_connected:
+        if st.sidebar.button("Connect to HubSpot", type="primary", use_container_width=True, key="hs_connect_btn"):
+            if not token_input.strip():
+                st.sidebar.error("Please enter a token first.")
+            else:
+                with st.sidebar.spinner("Validating with HubSpot API..."):
+                    ok, portal_id_res, err_msg = validate_and_connect(token_input.strip())
+                    if ok:
+                        st.session_state.hubspot_connected = True
+                        st.session_state.hubspot_portal_id = str(portal_id_res)
+                        st.session_state.hubspot_token = token_input.strip()
+                        st.rerun()
+                    else:
+                        st.sidebar.error(f"❌ {err_msg}")
+        st.sidebar.caption("Not connected")
+
+        # Optional OAuth flow toggle
+        with st.sidebar.expander("⚡ 1-Click HubSpot OAuth (Marketplace Flow)", expanded=False):
+            client_id = os.environ.get("HUBSPOT_CLIENT_ID", "").strip()
+            client_secret = os.environ.get("HUBSPOT_CLIENT_SECRET", "").strip()
+            redirect_uri = os.environ.get("HUBSPOT_REDIRECT_URI", "http://localhost:8501").strip()
+            if client_id:
+                try:
+                    provider = HubSpotOAuthProvider(client_id=client_id, client_secret=client_secret, redirect_uri=redirect_uri)
+                    st.link_button("🟠 Connect with HubSpot OAuth", provider.get_auth_url(redirect_uri=redirect_uri), type="primary", use_container_width=True)
+                except Exception as e:
+                    st.caption(f"OAuth config: {e}")
+            else:
+                st.caption("Configure HUBSPOT_CLIENT_ID in .env for marketplace 1-click install.")
+    else:
         if st.sidebar.button("Disconnect", type="secondary", use_container_width=True, key="hs_disconnect_btn"):
             st.session_state.hubspot_connected = False
             st.session_state.hubspot_portal_id = None
             st.session_state.hubspot_token = ""
-            st.session_state.hubspot_domain = None
-            st.session_state.hubspot_user = None
+            st.session_state.hubspot_token_input_field = ""
             st.rerun()
-        token_input = st.session_state.get("hubspot_token", "")
-    else:
-        auth_mode = st.sidebar.radio(
-            "Auth Mode:",
-            options=["1-Click OAuth (Official)", "Private App Token (PAT)"],
-            horizontal=True,
-            label_visibility="collapsed",
-        )
-
-        if auth_mode == "1-Click OAuth (Official)":
-            client_id = os.environ.get("HUBSPOT_CLIENT_ID", "").strip()
-            client_secret = os.environ.get("HUBSPOT_CLIENT_SECRET", "").strip()
-            redirect_uri = os.environ.get("HUBSPOT_REDIRECT_URI", "http://localhost:8501").strip()
-
-            if not client_id or not client_secret:
-                with st.sidebar.expander("⚙️ OAuth App Credentials", expanded=True):
-                    client_id = st.text_input("Client ID", value=client_id, key="oauth_client_id_in")
-                    client_secret = st.text_input("Client Secret", value=client_secret, type="password", key="oauth_client_secret_in")
-                    redirect_uri = st.text_input("Redirect URI", value=redirect_uri, key="oauth_redirect_uri_in")
-                    if client_id and client_secret:
-                        os.environ["HUBSPOT_CLIENT_ID"] = client_id
-                        os.environ["HUBSPOT_CLIENT_SECRET"] = client_secret
-                        os.environ["HUBSPOT_REDIRECT_URI"] = redirect_uri
-
-            if client_id:
-                try:
-                    provider = HubSpotOAuthProvider(
-                        client_id=client_id,
-                        client_secret=client_secret,
-                        redirect_uri=redirect_uri,
-                    )
-                    auth_url = provider.get_auth_url(redirect_uri=redirect_uri)
-                    st.sidebar.link_button(
-                        "🟠 Connect with HubSpot",
-                        url=auth_url,
-                        type="primary",
-                        use_container_width=True,
-                        help="Redirects to HubSpot's official authorization screen to connect your portal.",
-                    )
-                    st.sidebar.caption("Redirects to HubSpot to securely authenticate and grant CRM permissions.")
-                except Exception as e:
-                    st.sidebar.error(f"OAuth error: {e}")
-            else:
-                st.sidebar.info("Enter your HubSpot App Client ID and Secret above to generate the OAuth button.")
-
-            token_input = st.session_state.get("hubspot_token", "")
-
-        else:
-            env_token = get_token_from_env()
-            stored_token = st.session_state.get("hubspot_token")
-            token_display = stored_token if stored_token is not None else (env_token or "")
-
-            token_input = st.sidebar.text_input(
-                "HubSpot Private App Token",
-                value=token_display,
-                type="password",
-                help="HubSpot token (starts with pat-). Defaults to .env if configured.",
-            )
-
-            col_conn_btn, col_conn_status = st.sidebar.columns([1, 1])
-            with col_conn_btn:
-                if st.button("Connect", type="primary", use_container_width=True, key="hs_connect_btn"):
-                    if not token_input.strip():
-                        st.sidebar.error("Please enter a token first.")
-                    else:
-                        with st.sidebar.spinner("Validating with HubSpot API..."):
-                            ok, portal_id_res, err_msg = validate_and_connect(token_input.strip())
-                            if ok:
-                                st.session_state.hubspot_connected = True
-                                st.session_state.hubspot_portal_id = portal_id_res
-                                st.session_state.hubspot_token = token_input.strip()
-                                st.rerun()
-                            else:
-                                st.sidebar.error(f"❌ {err_msg}")
-            with col_conn_status:
-                st.sidebar.caption("Not connected")
+        st.sidebar.markdown(f":green[Connected to portal {active_portal}]")
 
     # Portal ID Resolution
     if is_connected and active_portal:
@@ -1011,10 +973,10 @@ def _render_ingestion_controls(config: Dict[str, Any]) -> None:
             is_connected = st.session_state.get("hubspot_connected", False)
             with col_h2:
                 if not is_connected:
-                    st.button("Fetch & Audit CRM Contacts", type="primary", disabled=True, use_container_width=True)
-                    st.caption("⚠️ Connect to HubSpot in sidebar first")
+                    st.button("Fetch & Clean HubSpot Contacts", type="primary", disabled=True, use_container_width=True)
+                    st.caption("⚠️ Connect to HubSpot first")
                 else:
-                    if st.button("Fetch & Audit CRM Contacts", type="primary", use_container_width=True):
+                    if st.button("Fetch & Clean HubSpot Contacts", type="primary", use_container_width=True):
                         with st.spinner("Fetching live contacts from HubSpot and running hygiene engine..."):
                             try:
                                 client = HubSpotClient(
