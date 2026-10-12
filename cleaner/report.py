@@ -100,6 +100,24 @@ def generate_summary_stats(df: pd.DataFrame) -> Dict[str, Any]:
     }
 
 
+def _sanitize_formula_injection(val: Any) -> Any:
+    """Escape CSV formula injection triggers (=, +, -, @, tab, cr) while preserving safe negative numbers."""
+    if isinstance(val, str) and val:
+        stripped = val.lstrip(" \t\r\n")
+        if stripped:
+            first_char = stripped[0]
+            if first_char in ("=", "+", "@"):
+                return "'" + val
+            elif first_char == "-":
+                # Check if it is a pure numeric negative number (e.g., "-5", "-12.50")
+                try:
+                    float(stripped)
+                    return val
+                except ValueError:
+                    return "'" + val
+    return val
+
+
 def write_csv_outputs(
     df: pd.DataFrame,
     cleaned_path: Union[str, Path] = "cleaned.csv",
@@ -119,6 +137,10 @@ def write_csv_outputs(
         export_df["issues"] = export_df["issues"].apply(
             lambda x: ", ".join(x) if isinstance(x, (list, tuple, set)) else str(x or "")
         )
+
+    # Protect against CSV formula injection on all object/string columns
+    for col in export_df.columns:
+        export_df[col] = export_df[col].apply(_sanitize_formula_injection)
 
     # Split rows
     if "route" in export_df.columns:

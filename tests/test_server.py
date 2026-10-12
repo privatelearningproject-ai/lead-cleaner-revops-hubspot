@@ -64,6 +64,9 @@ def test_oauth_callback_missing_code(client):
 @patch("server.exchange_authorization_code")
 def test_oauth_callback_success(mock_exchange, client):
     """Verify /oauth/callback executes code exchange and returns success page with portal_id."""
+    from server import _OAUTH_STATES
+    _OAUTH_STATES.add("some_state")
+
     mock_exchange.return_value = {
         "portal_id": "9876543",
         "access_token": "token_abc_123",
@@ -76,6 +79,16 @@ def test_oauth_callback_success(mock_exchange, client):
     assert "Connected to HubSpot!" in response.text
     assert "Connected Portal ID: 9876543" in response.text
     mock_exchange.assert_called_once_with("valid_hubspot_code")
+
+
+def test_oauth_callback_invalid_state(client):
+    """Verify /oauth/callback rejects mismatched or replayed state tokens."""
+    from server import _OAUTH_STATES
+    _OAUTH_STATES.add("legitimate_state")
+
+    response = client.get("/oauth/callback?code=some_code&state=forged_state")
+    assert response.status_code == 400
+    assert "Invalid or Expired OAuth State" in response.text
 
 
 @patch("server.exchange_authorization_code")
@@ -131,4 +144,57 @@ def test_public_documentation_endpoints(client):
         assert resp.status_code == 200
         assert "text/html" in resp.headers.get("content-type", "")
         assert len(resp.text) > 100
+
+
+def test_persistent_oauth_state_lifecycle(tmp_path):
+    """Verify save_oauth_state and consume_oauth_state single-use & TTL behavior."""
+    from cleaner.db import consume_oauth_state, save_oauth_state
+    db_path = tmp_path / "test_oauth_states.db"
+
+    # 1. State saved and consumed
+    save_oauth_state("state_one", ttl_seconds=60, db_path=db_path)
+    assert consume_oauth_state("state_one", db_path=db_path) is True
+    # 2. Cannot be consumed twice (replay attack protection)
+    assert consume_oauth_state("state_one", db_path=db_path) is False
+
+    # 3. Expired state cannot be consumed
+    save_oauth_state("state_expired", ttl_seconds=-1, db_path=db_path)
+    assert consume_oauth_state("state_expired", db_path=db_path) is False
+
+
+def test_disconnect_portal_endpoint(client, tmp_path, monkeypatch):
+    """Verify POST /api/portal/{portal_id}/disconnect deletes stored credentials."""
+    db_path = tmp_path / "test_disconnect.db"
+    monkeypatch.setenv("LEADS_AUDIT_DB_PATH", str(db_path))
+
+    portal_id = "test_disconnect_portal_99"
+    save_portal(
+        portal_id=portal_id,
+        access_token="tok_123",
+        refresh_token="ref_456",
+        db_path=db_path,
+    )
+
+    # Disconnect
+    resp = client.post(f"/api/portal/{portal_id}/disconnect")
+    assert resp.status_code == 200
+    assert resp.json() == {"portal_id": portal_id, "disconnected": True}
+
+    # Verify portal is removed
+    from cleaner.db import get_portal
+    assert get_portal(portal_id, db_path=db_path) is None
+
+
+@patch("server.exchange_authorization_code")
+def test_oauth_callback_api_error_returns_400(mock_exchange, client):
+    """Verify /oauth/callback returns 400 when HubSpot API error occurs during token exchange."""
+    from cleaner.hubspot import HubSpotAPIError
+    from server import _OAUTH_STATES
+    _OAUTH_STATES.add("valid_state_err")
+
+    mock_exchange.side_effect = HubSpotAPIError("Bad request from HubSpot", status_code=400)
+
+    response = client.get("/oauth/callback?code=bad_code&state=valid_state_err")
+    assert response.status_code == 400
+    assert "HubSpot OAuth error" in response.json()["detail"]
 

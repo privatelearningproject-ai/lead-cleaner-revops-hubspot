@@ -133,7 +133,60 @@ def init_db(db_path: Union[str, Path] = DEFAULT_DB_PATH) -> None:
         )
         _ensure_column_exists(cursor, "merge_audit", "portal_id", "TEXT")
 
+        # 4. oauth_states table (persistent across worker processes with TTL)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS oauth_states (
+                state TEXT PRIMARY KEY,
+                created_at DATETIME NOT NULL,
+                expires_at DATETIME NOT NULL
+            )
+            """
+        )
+
         conn.commit()
+
+
+def save_oauth_state(
+    state: str,
+    ttl_seconds: int = 600,
+    db_path: Union[str, Path] = DEFAULT_DB_PATH,
+) -> None:
+    """Save an OAuth state token with an expiration timestamp (default 10 minutes)."""
+    init_db(db_path)
+    now = datetime.now(timezone.utc)
+    expires = datetime.fromtimestamp(now.timestamp() + ttl_seconds, tz=timezone.utc)
+    with get_connection(db_path) as conn:
+        cursor = conn.cursor()
+        # Clean up expired states
+        cursor.execute("DELETE FROM oauth_states WHERE expires_at < ?", (now.isoformat(),))
+        cursor.execute(
+            "INSERT OR REPLACE INTO oauth_states (state, created_at, expires_at) VALUES (?, ?, ?)",
+            (state.strip(), now.isoformat(), expires.isoformat()),
+        )
+        conn.commit()
+
+
+def consume_oauth_state(
+    state: str,
+    db_path: Union[str, Path] = DEFAULT_DB_PATH,
+) -> bool:
+    """Validate and single-use consume an OAuth state token. Returns True if valid and unexpired."""
+    init_db(db_path)
+    now = datetime.now(timezone.utc)
+    with get_connection(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT state FROM oauth_states WHERE state = ? AND expires_at >= ?",
+            (state.strip(), now.isoformat()),
+        )
+        row = cursor.fetchone()
+        if row:
+            # Delete so it cannot be reused (one-time token)
+            cursor.execute("DELETE FROM oauth_states WHERE state = ?", (state.strip(),))
+            conn.commit()
+            return True
+        return False
 
 
 # =============================================================================
@@ -215,6 +268,21 @@ def list_portals(db_path: Union[str, Path] = DEFAULT_DB_PATH) -> List[Dict[str, 
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM portals ORDER BY created_at DESC")
         return [dict(r) for r in cursor.fetchall()]
+
+
+def delete_portal(
+    portal_id: Union[str, int],
+    db_path: Union[str, Path] = DEFAULT_DB_PATH,
+) -> bool:
+    """Delete or disconnect a portal by removing its entry from the database."""
+    init_db(db_path)
+    pid = str(portal_id).strip()
+    with get_connection(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM portals WHERE portal_id = ?", (pid,))
+        deleted = cursor.rowcount > 0
+        conn.commit()
+        return deleted
 
 
 # =============================================================================
@@ -466,26 +534,53 @@ def log_merge_proposals(
             conn.commit()
 
 
-def get_run(run_id: str, db_path: Union[str, Path] = DEFAULT_DB_PATH) -> Optional[Dict[str, Any]]:
-    """Retrieve run record by run_id."""
+def get_run(
+    run_id: str,
+    portal_id: Optional[str] = None,
+    db_path: Union[str, Path] = DEFAULT_DB_PATH,
+) -> Optional[Dict[str, Any]]:
+    """Retrieve run record by run_id, with optional tenant portal_id scoping."""
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM runs WHERE run_id = ?", (run_id,))
+        if portal_id:
+            cursor.execute("SELECT * FROM runs WHERE run_id = ? AND portal_id = ?", (run_id, str(portal_id)))
+        else:
+            cursor.execute("SELECT * FROM runs WHERE run_id = ?", (run_id,))
         row = cursor.fetchone()
         return dict(row) if row else None
 
 
-def get_record_audits(run_id: str, db_path: Union[str, Path] = DEFAULT_DB_PATH) -> List[Dict[str, Any]]:
-    """Retrieve all record audit entries for a run."""
+def get_record_audits(
+    run_id: str,
+    portal_id: Optional[str] = None,
+    db_path: Union[str, Path] = DEFAULT_DB_PATH,
+) -> List[Dict[str, Any]]:
+    """Retrieve all record audit entries for a run, with optional tenant scoping."""
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM record_audit WHERE run_id = ? ORDER BY audit_id ASC", (run_id,))
+        if portal_id:
+            cursor.execute(
+                "SELECT * FROM record_audit WHERE run_id = ? AND portal_id = ? ORDER BY audit_id ASC",
+                (run_id, str(portal_id)),
+            )
+        else:
+            cursor.execute("SELECT * FROM record_audit WHERE run_id = ? ORDER BY audit_id ASC", (run_id,))
         return [dict(r) for r in cursor.fetchall()]
 
 
-def get_merge_audits(run_id: str, db_path: Union[str, Path] = DEFAULT_DB_PATH) -> List[Dict[str, Any]]:
-    """Retrieve all merge proposals / audits for a run."""
+def get_merge_audits(
+    run_id: str,
+    portal_id: Optional[str] = None,
+    db_path: Union[str, Path] = DEFAULT_DB_PATH,
+) -> List[Dict[str, Any]]:
+    """Retrieve all merge proposals / audits for a run, with optional tenant scoping."""
     with get_connection(db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM merge_audit WHERE run_id = ? ORDER BY id ASC", (run_id,))
+        if portal_id:
+            cursor.execute(
+                "SELECT * FROM merge_audit WHERE run_id = ? AND portal_id = ? ORDER BY id ASC",
+                (run_id, str(portal_id)),
+            )
+        else:
+            cursor.execute("SELECT * FROM merge_audit WHERE run_id = ? ORDER BY id ASC", (run_id,))
         return [dict(r) for r in cursor.fetchall()]

@@ -27,10 +27,7 @@ DEFAULT_OAUTH_SCOPES = [
     "oauth",
     "crm.objects.contacts.read",
     "crm.objects.contacts.write",
-    "crm.objects.companies.read",
-    "crm.objects.companies.write",
-    "crm.objects.deals.read",
-    "crm.objects.deals.write",
+    "crm.schemas.contacts.read",
 ]
 
 

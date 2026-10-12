@@ -147,6 +147,12 @@ def read_file(
 
     lower_name = target_filename.lower()
     is_excel = lower_name.endswith(".xlsx") or lower_name.endswith(".xls")
+    is_csv = lower_name.endswith(".csv")
+
+    if not (is_excel or is_csv):
+        raise ValueError(
+            f"Unsupported file format for '{target_filename}'. Only CSV (.csv) and Excel (.xlsx, .xls) files are supported."
+        )
 
     if is_excel:
         if isinstance(file_path_or_buffer, bytes):

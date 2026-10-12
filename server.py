@@ -38,7 +38,7 @@ app = FastAPI(
 _OAUTH_STATES: set[str] = set()
 
 HUBSPOT_AUTHORIZE_URL = "https://app.hubspot.com/oauth/authorize"
-DEFAULT_SCOPES = "crm.objects.contacts.read crm.objects.contacts.write"
+DEFAULT_SCOPES = "crm.objects.contacts.read crm.objects.contacts.write crm.schemas.contacts.read"
 
 
 @app.get("/health")
@@ -60,9 +60,15 @@ def oauth_install(
         )
 
     state = secrets.token_urlsafe(24)
-    _OAUTH_STATES.add(state)
+    db_path = os.environ.get("LEADS_AUDIT_DB_PATH", DEFAULT_DB_PATH)
+    try:
+        from cleaner.db import save_oauth_state
+        save_oauth_state(state, ttl_seconds=600, db_path=db_path)
+    except Exception:
+        _OAUTH_STATES.add(state)
 
-    requested_scope = scope or os.environ.get("HUBSPOT_SCOPE", DEFAULT_SCOPES)
+    configured_scope = os.environ.get("HUBSPOT_SCOPES") or os.environ.get("HUBSPOT_SCOPE")
+    requested_scope = scope or configured_scope or DEFAULT_SCOPES
     params = {
         "client_id": client_id,
         "redirect_uri": redirect_uri,
@@ -103,6 +109,38 @@ def oauth_callback(
     if not code:
         raise HTTPException(status_code=400, detail="Missing required authorization code")
 
+    # Validate state parameter across workers with persistent TTL store
+    if state:
+        db_path = os.environ.get("LEADS_AUDIT_DB_PATH", DEFAULT_DB_PATH)
+        is_valid_state = False
+        try:
+            from cleaner.db import consume_oauth_state
+            is_valid_state = consume_oauth_state(state, db_path=db_path)
+        except Exception:
+            pass
+
+        # Fallback to in-memory check if DB check did not pass
+        if not is_valid_state:
+            if state in _OAUTH_STATES:
+                _OAUTH_STATES.discard(state)
+                is_valid_state = True
+
+        if not is_valid_state:
+            return HTMLResponse(
+                status_code=400,
+                content="""
+                <!DOCTYPE html>
+                <html>
+                <head><title>Authorization Failed</title></head>
+                <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+                    <h1 style="color: #e53e3e;">❌ Invalid or Expired OAuth State</h1>
+                    <p>The authorization request could not be verified (possible CSRF or expired session).</p>
+                    <p><a href="/oauth/install">Restart Authorization</a></p>
+                </body>
+                </html>
+                """,
+            )
+
     try:
         token_info = exchange_authorization_code(code)
         portal_id = token_info.get("portal_id", "unknown")
@@ -116,6 +154,10 @@ def oauth_callback(
     # If returnUrl was provided by HubSpot (Seamless Install flow), redirect back to HubSpot
     if return_url:
         return RedirectResponse(url=return_url, status_code=302)
+
+    app_url = os.environ.get("HUBSPOT_APP_URL", "/").strip()
+    if not app_url:
+        app_url = "/"
 
     # Return clean, user-friendly confirmation HTML page
     html_content = f"""
@@ -176,7 +218,7 @@ def oauth_callback(
             <p>The Lead Cleaner RevOps App has been securely authorized for your account.</p>
             <div class="badge">Connected Portal ID: {portal_id}</div>
             <p>You can now return to the Lead Cleaner dashboard and process your contact lists.</p>
-            <a href="/" class="btn">Open Lead Cleaner Dashboard</a>
+            <a href="{app_url}?portal_id={portal_id}" class="btn">Open Lead Cleaner Dashboard</a>
         </div>
     </body>
     </html>
@@ -201,6 +243,16 @@ def get_portal_quota(portal_id: str) -> Dict[str, Any]:
         "quota_remaining": quota["remaining"],
         "is_exceeded": quota["is_exceeded"],
     }
+
+
+@app.post("/api/portal/{portal_id}/disconnect")
+def disconnect_portal(portal_id: str) -> Dict[str, Any]:
+    """Disconnect a portal and remove its stored OAuth tokens."""
+    pid = str(portal_id).strip()
+    db_path = os.environ.get("LEADS_AUDIT_DB_PATH", DEFAULT_DB_PATH)
+    from cleaner.db import delete_portal
+    deleted = delete_portal(pid, db_path=db_path)
+    return {"portal_id": pid, "disconnected": deleted}
 
 
 @app.get("/setup-guide", response_class=HTMLResponse)
@@ -228,4 +280,99 @@ def get_terms_of_service() -> HTMLResponse:
     if terms_path.exists():
         return HTMLResponse(content=terms_path.read_text(encoding="utf-8"))
     return HTMLResponse(content="<h1>Terms of Service</h1><p>Terms of service coming soon.</p>")
+
+
+# =============================================================================
+# Reverse Proxy to Internal Streamlit Instance (Render Single-Port Topology)
+# =============================================================================
+
+STREAMLIT_INTERNAL_PORT = int(os.environ.get("STREAMLIT_INTERNAL_PORT", "8501"))
+STREAMLIT_INTERNAL_HOST = os.environ.get("STREAMLIT_INTERNAL_HOST", "127.0.0.1")
+ENABLE_STREAMLIT_PROXY = os.environ.get("ENABLE_STREAMLIT_PROXY", "true").lower() in ("true", "1", "yes")
+
+if ENABLE_STREAMLIT_PROXY:
+    import asyncio
+    import httpx
+    import websockets
+    from fastapi import Request, Response, WebSocket
+    from fastapi.responses import StreamingResponse
+
+    @app.websocket("/{path:path}")
+    async def proxy_streamlit_websocket(client_ws: WebSocket, path: str):
+        """Forward WebSocket traffic between browser and internal Streamlit process."""
+        await client_ws.accept()
+        query = str(client_ws.query_params)
+        target_ws_url = f"ws://{STREAMLIT_INTERNAL_HOST}:{STREAMLIT_INTERNAL_PORT}/{path}"
+        if query:
+            target_ws_url += f"?{query}"
+
+        try:
+            async with websockets.connect(target_ws_url, ping_interval=20, ping_timeout=20) as server_ws:
+                async def forward_to_server():
+                    try:
+                        while True:
+                            msg = await client_ws.receive()
+                            if "text" in msg:
+                                await server_ws.send(msg["text"])
+                            elif "bytes" in msg:
+                                await server_ws.send(msg["bytes"])
+                    except Exception:
+                        pass
+
+                async def forward_to_client():
+                    try:
+                        async for msg in server_ws:
+                            if isinstance(msg, str):
+                                await client_ws.send_text(msg)
+                            else:
+                                await client_ws.send_bytes(msg)
+                    except Exception:
+                        pass
+
+                await asyncio.gather(forward_to_server(), forward_to_client(), return_exceptions=True)
+        except Exception:
+            pass
+        finally:
+            try:
+                await client_ws.close()
+            except Exception:
+                pass
+
+    @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH"])
+    async def proxy_streamlit_http(request: Request, path: str):
+        """Forward all other HTTP routes to the internal Streamlit frontend."""
+        query = str(request.url.query)
+        target_http_url = f"http://{STREAMLIT_INTERNAL_HOST}:{STREAMLIT_INTERNAL_PORT}/{path}"
+        if query:
+            target_http_url += f"?{query}"
+
+        # Filter hop-by-hop headers
+        excluded_headers = {"host", "content-length", "connection", "transfer-encoding"}
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in excluded_headers}
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            req_content = await request.body()
+            try:
+                resp = await client.request(
+                    method=request.method,
+                    url=target_http_url,
+                    headers=headers,
+                    content=req_content,
+                    follow_redirects=False,
+                )
+            except Exception as exc:
+                return Response(
+                    content=f"<html><body><h2>Application Starting Up</h2><p>Streamlit is initializing... Please refresh in a moment. ({exc})</p></body></html>",
+                    status_code=503,
+                    media_type="text/html",
+                )
+
+            resp_headers = {k: v for k, v in resp.headers.items() if k.lower() not in excluded_headers}
+            return Response(
+                content=resp.content,
+                status_code=resp.status_code,
+                headers=resp_headers,
+                media_type=resp.headers.get("content-type"),
+            )
+
 

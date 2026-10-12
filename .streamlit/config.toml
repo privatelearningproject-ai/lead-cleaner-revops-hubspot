@@ -1,10 +1,10 @@
 [theme]
-base = "dark"
-primaryColor = "#5E6AD2"
-backgroundColor = "#0E121B"
-secondaryBackgroundColor = "#141824"
-textColor = "#F1F5F9"
-borderColor = "#222938"
+base = "light"
+primaryColor = "#FF5C35"
+backgroundColor = "#F5F7FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#243342"
+borderColor = "#DCE3EA"
 showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "8px"
@@ -15,14 +15,14 @@ headingFontSizes = ["28px", "22px", "18px", "15px", "13px", "12px"]
 headingFontWeights = [700, 600, 600, 600, 500, 500]
 linkUnderline = false
 
-chartCategoricalColors = ["#5E6AD2", "#10B981", "#3B82F6", "#F59E0B", "#EC4899", "#8B5CF6", "#64748B"]
+chartCategoricalColors = ["#FF5C35", "#10B981", "#3B82F6", "#F59E0B", "#EC4899", "#8B5CF6", "#64748B"]
 
 [theme.sidebar]
-backgroundColor = "#0A0D14"
-secondaryBackgroundColor = "#141824"
-textColor = "#F1F5F9"
-borderColor = "#222938"
-primaryColor = "#5E6AD2"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8FAFC"
+textColor = "#243342"
+borderColor = "#DCE3EA"
+primaryColor = "#FF5C35"
 
 [server]
 headless = true

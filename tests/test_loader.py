@@ -230,3 +230,7 @@ class TestLoadAndMapPipeline:
         assert first_row["consent_source"] == "Website Form"
         assert first_row["notes_raw"] == "Looking for enterprise plan under 5 lakhs"
         assert first_row["source"] == "messy_leads.csv"
+
+    def test_unsupported_file_extension_raises_error(self):
+        with pytest.raises(ValueError, match="Unsupported file format"):
+            read_file(b"some,data\n1,2\n", filename="malicious.exe")

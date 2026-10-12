@@ -27,9 +27,8 @@ COPY . /app/
 # Make entrypoint executable
 RUN chmod +x /app/entrypoint.sh
 
-# Expose FastAPI and Streamlit ports
+# Expose Render public port
 EXPOSE 8000
-EXPOSE 8501
 
 # Run entrypoint script
 ENTRYPOINT ["/app/entrypoint.sh"]

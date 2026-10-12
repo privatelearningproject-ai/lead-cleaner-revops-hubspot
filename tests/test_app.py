@@ -31,6 +31,45 @@ class TestAppComponents:
         assert "Aarav" in csv_text
         assert "phone_invalid, consent_missing" in csv_text
 
+    def test_to_csv_bytes_formula_injection_sanitization(self):
+        df = pd.DataFrame(
+            [
+                {
+                    "first_name": "=cmd|' /C calc'!A0",
+                    "last_name": "@SUM(1+1)",
+                    "company": "+cmd",
+                    "notes": "-secret",
+                }
+            ]
+        )
+        csv_bytes = to_csv_bytes(df)
+        csv_text = csv_bytes.decode("utf-8")
+        assert "'=cmd" in csv_text
+        assert "'@SUM" in csv_text
+        assert "'+cmd" in csv_text
+        assert "'-secret" in csv_text
+
+    def test_to_csv_bytes_formula_injection_whitespace_and_negative_numbers(self):
+        df = pd.DataFrame(
+            [
+                {
+                    "first_name": "  =SUM(A1:A10)",
+                    "last_name": "\t+cmd",
+                    "safe_negative": "-42",
+                    "safe_decimal": "-12.50",
+                    "unsafe_dash": "-cmd",
+                }
+            ]
+        )
+        csv_bytes = to_csv_bytes(df)
+        csv_text = csv_bytes.decode("utf-8")
+        assert "'  =SUM" in csv_text
+        assert "'\t+cmd" in csv_text
+        assert "'-cmd" in csv_text
+        assert "-42" in csv_text
+        assert "'-42" not in csv_text
+        assert "-12.50" in csv_text
+
     def test_run_in_memory_pipeline(self):
         fixture_path = Path(__file__).resolve().parent / "fixtures" / "messy_leads.csv"
         assert fixture_path.exists()
